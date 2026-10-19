@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="css/painel.css">
 <!-- Ordem importa: base primeiro, início por último -->
 <script src="js/base.js" defer></script>
+<script src="js/paginacao.js" defer></script>
 <script src="js/estrutura.js" defer></script>
 <script src="js/entregar.js" defer></script>
 <script src="js/devolver.js" defer></script>
@@ -17,6 +18,8 @@
 <script src="js/pessoas.js" defer></script>
 <script src="js/relatorios.js" defer></script>
 <script src="js/config.js" defer></script>
+<script src="js/turno.js" defer></script>
+<script src="js/tv.js" defer></script>
 <script src="js/inicio.js" defer></script>
 </head>
 <body>
@@ -44,6 +47,7 @@
       <span class="marca-logo"><img src="img/ct48.png" alt=""></span>
       <div><div class="eyebrow">Painel do ADM</div><b>Controle de CT48</b></div>
     </div>
+    <div id="selo-demo" class="selo-demo" hidden title="Dados de exemplo (dados/demo.db). O banco real não é usado.">Demonstração · dados de exemplo</div>
     <nav class="menu" role="tablist" aria-label="Seções do painel">
       <div class="menu-grupo">Operação</div>
       <button type="button" role="tab" data-aba="entregar" aria-selected="true"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg></span><span class="mt"><b>Entregar</b><small>Liberar um CT48</small></span><kbd>1</kbd></button>
@@ -87,7 +91,11 @@
         <h1 id="titulo-pagina">Entregar aparelho</h1>
         <p id="sub-pagina" class="muted">Libere um CT48 para um funcionário ou diarista.</p>
       </div>
-      <div id="relogio" class="relogio"></div>
+      <div class="cab-direita">
+        <div id="turno-atual" class="turno-atual" hidden></div>
+        <button type="button" id="abrir-tv" class="btn mini ghost" title="Tela cheia para monitor na sala do ADM">Modo TV</button>
+        <div id="relogio" class="relogio"></div>
+      </div>
     </header>
 
   <main class="pagina">
@@ -161,15 +169,37 @@
           <ul id="devolvidos" class="devolvidos"></ul>
         </div>
       </div>
+      <div class="card fim-turno">
+        <div class="cab-card">
+          <div>
+            <h2>Fim de turno</h2>
+            <p class="muted pequeno sub-graf">Quem é do turno e ainda está com aparelho. A lista esvazia conforme as pessoas leem o QR.</p>
+          </div>
+          <select id="ft-turno" aria-label="Turno"></select>
+        </div>
+        <div class="ft-progresso"><div class="ft-numeros" id="ft-numeros"></div><div class="barra ft-barra"><span id="ft-barra"></span></div></div>
+        <p id="ft-msg" class="msg" role="status"></p>
+        <div id="ft-lista" class="ft-lista"></div>
+        <div id="ft-pag"></div>
+      </div>
     </section>
 
     <div id="card-em-uso" class="card">
       <div class="cab-card">
-        <h2>Em uso agora</h2>
-        <span id="uso-contagem" class="pill"></span>
+        <h2>Em uso agora <span id="uso-contagem" class="pill"></span></h2>
+        <div class="linha uso-ferramentas">
+          <input id="uso-busca" type="search" placeholder="Buscar pessoa ou aparelho…" autocomplete="off" aria-label="Buscar em uso">
+          <select id="uso-ordem" aria-label="Ordenar">
+            <option value="prazo">Prazo de devolução</option>
+            <option value="tempo">Há mais tempo</option>
+            <option value="aparelho">Aparelho</option>
+            <option value="nome">Nome</option>
+          </select>
+        </div>
       </div>
       <p id="msg-uso" class="msg" role="status"></p>
       <div id="em-uso"></div>
+      <div id="uso-pag"></div>
     </div>
 
     <section data-painel="alertas" hidden>
@@ -186,6 +216,7 @@
         </div>
         <p id="al-msg" class="msg" role="status"></p>
         <div id="lista-alertas" class="lista-alertas"></div>
+        <div id="al-pag"></div>
       </div>
       <p class="muted pequeno">Os alertas se resolvem sozinhos quando a situação acaba (o aparelho volta, o sinal volta). "Resolver" só tira da lista de ativos aquela ocorrência.</p>
     </section>
@@ -212,8 +243,28 @@
           </div>
           <input id="ap-busca" type="search" placeholder="Buscar aparelho, pessoa, SN, área…" autocomplete="off" aria-label="Buscar aparelho">
         </div>
+        <div class="filtros ap-modo">
+          <div class="seg" role="group" aria-label="Como mostrar">
+            <button type="button" data-ap-vista="lista" aria-pressed="true">Lista</button>
+            <button type="button" data-ap-vista="cartoes" aria-pressed="false">Cartões</button>
+          </div>
+          <label class="ap-ordem">Ordenar por
+            <select id="ap-ordem">
+              <option value="situacao">Situação (problemas primeiro)</option>
+              <option value="nome">Nome</option>
+              <option value="bateria">Bateria (menor primeiro)</option>
+              <option value="tempo">Tempo de uso (maior primeiro)</option>
+              <option value="area">Área</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="card ap-areas-card">
+        <div class="cab-card"><h2>Por área</h2><button type="button" id="ap-area-limpar" class="btn mini ghost" hidden>Mostrar todas as áreas</button></div>
+        <div id="ap-areas" class="ap-areas"></div>
       </div>
       <div id="grade-aparelhos" class="grade-aparelhos"></div>
+      <div id="ap-pag"></div>
       <p class="muted pequeno">Para registrar um CT48 novo, cadastre o nome aqui e digite no app do aparelho o código que aparecer no cartão.</p>
     </section>
 
@@ -234,7 +285,7 @@
         <p id="pes-totais" class="muted pequeno pes-totais"></p>
       </div>
       <div class="grade-pessoas">
-        <div class="card pes-lista-card"><div id="pes-lista" class="pes-lista"></div></div>
+        <div class="card pes-lista-card"><div id="pes-lista" class="pes-lista"></div><div id="pes-pag"></div></div>
         <div class="card pes-detalhe" id="pes-detalhe"><p class="muted h-vazio">Escolha uma pessoa na lista para ver o histórico e as ações.</p></div>
       </div>
     </section>
@@ -274,7 +325,7 @@
       <div class="card">
         <p id="h-info" class="muted pequeno h-info"></p>
         <div id="historico" class="linha-tempo"></div>
-        <button id="h-mais" type="button" class="btn h-mais" hidden>Mostrar mais</button>
+        <div id="h-pag"></div>
       </div>
     </section>
 
@@ -294,7 +345,7 @@
         </div>
       </div>
       <p id="rel-periodo" class="muted pequeno rel-periodo"></p>
-      <div class="resumo resumo-6" id="rel-kpis"></div>
+      <div class="resumo resumo-auto" id="rel-kpis"></div>
       <div class="grade-rel">
         <div class="card" id="rel-dia-card"><h2>Horas de uso por dia</h2><div id="rel-dia" class="grafico"></div></div>
         <div class="card"><h2>Aparelhos em uso por hora do dia</h2><p class="muted pequeno sub-graf">Média do período. Mostra os horários de pico.</p><div id="rel-hora" class="grafico"></div></div>
@@ -302,6 +353,12 @@
       <div class="grade-rel">
         <div class="card"><h2>Uso por aparelho</h2><div id="rel-aparelhos"></div></div>
         <div class="card"><h2>Uso por setor</h2><div id="rel-setores"></div></div>
+      </div>
+      <div class="card"><h2>Comparação dos turnos</h2><div id="rel-turnos"></div></div>
+      <div class="card"><h2>Mapa de calor: aparelhos em uso</h2><p class="muted pequeno sub-graf">Média por dia da semana e hora. Quanto mais escuro, mais aparelhos ao mesmo tempo.</p><div id="rel-mapa"></div></div>
+      <div class="grade-rel">
+        <div class="card"><h2>Aparelhos com mais problemas</h2><p class="muted pequeno sub-graf">Saídas da área, QR falsos, manutenções e bloqueios no período.</p><div id="rel-problemas"></div></div>
+        <div class="card"><h2>Quem mais atrasa a devolução</h2><p class="muted pequeno sub-graf">Devolveu depois do fim do turno + tolerância.</p><div id="rel-atrasos"></div></div>
       </div>
       <div class="card"><h2>Quem mais usou</h2><div id="rel-pessoas"></div></div>
     </section>
@@ -395,6 +452,25 @@
       </div>
     </section>
   </main>
+  </div>
+</div>
+
+<div id="tv" class="tv" hidden>
+  <header class="tv-cab">
+    <div class="tv-marca">
+      <span class="tv-logo"><img src="img/ct48.png" alt=""></span>
+      <div><b>Controle de CT48</b><span class="tv-vivo"><i></i>Ao vivo</span></div>
+    </div>
+    <div class="tv-turno" id="tv-turno"></div>
+    <div class="tv-relogio" id="tv-relogio"></div>
+    <button type="button" id="fechar-tv" class="tv-sair" title="Sair do Modo TV (Esc)">✕</button>
+  </header>
+  <div class="tv-kpis" id="tv-kpis"></div>
+  <div class="tv-frota" id="tv-frota"></div>
+  <div class="tv-corpo">
+    <section class="tv-painel"><h2>Por área <span class="tv-leg"><span><i class="d-uso"></i>em uso</span><span><i class="d-livre"></i>livre</span><span><i class="d-alerta"></i>com problema</span></span></h2><div id="tv-areas" class="tv-areas"></div></section>
+    <section class="tv-painel"><h2>Precisa de atenção</h2><div id="tv-alertas" class="tv-alertas"></div></section>
+    <section class="tv-painel"><h2>Movimento recente</h2><div id="tv-mov" class="tv-mov"></div></section>
   </div>
 </div>
 

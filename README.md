@@ -105,6 +105,8 @@ npm start
 
 Abra `http://localhost:3000` (ou a porta do `config.json`). Para usar outra porta sem editar o arquivo: `PORTA=3100 npm start`.
 
+> **Demonstração:** `npm run demo` gera um banco de exemplo **separado** (`dados/demo.db`) com 64 CT48, cerca de 180 funcionários nos 3 turnos, 25 diaristas e 30 dias de uso, e abre o painel em `http://localhost:3200` (login `demo`, senha `demo1234`). O banco real não é tocado. Para abrir de novo sem gerar outra vez: `npm run demo:abrir`. Todos os nomes e CPFs são fictícios.
+
 > **Simulador:** `npm run simulador` sobe o servidor com um CT48 de mentira em `/simulador`. Ele tem uma rota que entrega o QR aberto sem leitura física, então **nunca use em produção**: lá é sempre `npm start`.
 
 ### App do CT48
@@ -126,6 +128,8 @@ O CT48 precisa estar na mesma rede do servidor. No Windows, libere a porta do se
 ## ⚙️ Painel do ADM
 
 Seções: **Entregar, Devolver, Alertas, Aparelhos, Pessoas, Histórico, Relatórios, Áreas Wi-Fi e Configurações**. As teclas `1` a `9` trocam de seção, e o endereço guarda a seção aberta (`/#relatorios`).
+
+Feito para frota grande: listas com páginas (1, 2, 3…), Aparelhos em **lista ou cartões** com ordenação e **quadro por área**, **fim de turno guiado** (quem do turno ainda está com aparelho), **sugestão de qual CT48 entregar** (o livre com mais bateria), turno atual no topo e **Modo TV** (`/#tv`) para um monitor na sala do ADM. Os relatórios comparam os turnos e mostram mapa de calor, aparelhos com mais problemas e quem mais atrasa a devolução.
 
 Em **Configurações** ficam os turnos (o nome tem que ser igual ao da coluna `turno` do CSV do RH, é ele que diz quando o aparelho devia ter voltado), os limites dos alertas, a validade do QR, os apps liberados no CT48, a cerca virtual e os ADMs.
 

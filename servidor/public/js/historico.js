@@ -1,8 +1,8 @@
 'use strict';
 /* Seção Histórico: linha do tempo com filtros e CSV. Também define ícones e títulos de eventos usados em Pessoas. */
 
-const H_PAGINA = 200;
-const hist = { dias: 1, busca: '', aparelho: '', cats: new Set(['entrega', 'devolucao', 'alerta']), dados: null, assinatura: '', mostrar: H_PAGINA, carregando: false };
+const H_PAGINA = 50;
+const hist = { dias: 1, busca: '', aparelho: '', cats: new Set(['entrega', 'devolucao', 'alerta']), dados: null, assinatura: '', carregando: false };
 
 const ICONES = {
   entrega: svg('<path d="M5 12h14M13 6l6 6-6 6"/>'),
@@ -108,7 +108,7 @@ function renderHistorico() {
   }
   sel.value = hist.aparelho;
 
-  const lista = filtrados(), parte = lista.slice(0, hist.mostrar);
+  const lista = filtrados(), pg = paginar(lista, 'historico', H_PAGINA), parte = pg.itens;
   const porDia = {};
   for (const h of lista) { const r = diaRotulo(h.t); porDia[r] = (porDia[r] ?? 0) + 1; }
   let html = '', diaAtual = '';
@@ -126,8 +126,7 @@ function renderHistorico() {
     </div>`;
   }
   $('#historico').innerHTML = html || `<p class="muted h-vazio">${todos.length ? 'Nenhum evento com esses filtros.' : 'Nada registrado neste período.'}</p>`;
-  $('#h-mais').hidden = lista.length <= hist.mostrar;
-  $('#h-mais').textContent = `Mostrar mais (${lista.length - parte.length} restantes)`;
+  $('#h-pag').innerHTML = htmlPaginacao(pg, 'eventos');
   $('#h-info').textContent = todos.length
     ? `${lista.length} de ${todos.length} eventos${hist.dados.cortado ? ' (só os mais recentes; escolha um período menor para ver tudo)' : ''}`
     : '';
@@ -136,19 +135,19 @@ function renderHistorico() {
 $$('[data-dias]').forEach(b => b.addEventListener('click', () => {
   hist.dias = Number(b.dataset.dias);
   $$('[data-dias]').forEach(x => x.setAttribute('aria-pressed', x === b));
-  hist.mostrar = H_PAGINA; hist.assinatura = '';
+  primeiraPagina('historico'); hist.assinatura = '';
   carregarHistorico();
 }));
 $$('[data-cat]').forEach(b => b.addEventListener('click', () => {
   const c = b.dataset.cat, liga = !hist.cats.has(c);
   if (liga) hist.cats.add(c); else hist.cats.delete(c);
   b.setAttribute('aria-pressed', liga);
-  hist.mostrar = H_PAGINA;
+  primeiraPagina('historico');
   renderHistorico();
 }));
-$('#h-busca').addEventListener('input', e => { hist.busca = e.target.value; hist.mostrar = H_PAGINA; renderHistorico(); });
-$('#h-aparelho').addEventListener('change', e => { hist.aparelho = e.target.value; hist.mostrar = H_PAGINA; renderHistorico(); });
-$('#h-mais').addEventListener('click', () => { hist.mostrar += H_PAGINA; renderHistorico(); });
+$('#h-busca').addEventListener('input', e => { hist.busca = e.target.value; primeiraPagina('historico'); renderHistorico(); });
+$('#h-aparelho').addEventListener('change', e => { hist.aparelho = e.target.value; primeiraPagina('historico'); renderHistorico(); });
+registrarPaginacao('historico', renderHistorico);
 
 $('#h-exportar').addEventListener('click', () => {
   const cel = v => `"${String(v ?? '').replace(/"/g, '""')}"`;

@@ -13,9 +13,11 @@ async function entrarNoPainel(nome) {
   $('#adm-ini').textContent = iniciais(nome);
   $('#tela-login').hidden = true;
   $('#tela-painel').hidden = false;
+  api('GET', '/api/me').then(r => { $('#selo-demo').hidden = !r.demo; }).catch(() => {});
   // O endereço guarda a aba aberta (/#relatorios): F5 e links voltam para ela
   const pedida = location.hash.slice(1);
   if (PAGINAS[pedida] && pedida !== aba) trocarAba(pedida); else await atualizar();
+  if (pedida === 'tv') abrirTv();
   clearInterval(timerAtualizar);
   timerAtualizar = setInterval(atualizar, 5000);
 }
@@ -90,7 +92,7 @@ function renderFrota() {
     $('#fr-' + k).textContent = partes[k];
     $('#fb-' + k).style.width = total ? (partes[k] / total * 100) + '%' : '0';
   }
-  const sinal = aparelhos.filter(a => a.registrado && (!a.visto || agora - a.visto >= ONLINE_MS)).length;
+  const sinal = aparelhos.filter(a => a.registrado && !a.manutencao && (!a.visto || agora - a.visto >= ONLINE_MS)).length;
   const fora = aparelhos.filter(a => a.fora).length;
   const alerta = [sinal && `${sinal} sem sinal`, fora && `${fora} fora da área`].filter(Boolean).join(' · ');
   $('#fr-alerta').hidden = !alerta;

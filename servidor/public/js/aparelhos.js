@@ -1,7 +1,9 @@
 'use strict';
 /* Seção Aparelhos: cartões com mini CT48, filtros, ações e manutenção. */
 
-const ap = { filtro: 'todos', busca: '', assinatura: '' };
+const ap = { filtro: 'todos', busca: '', assinatura: '', vista: 'lista', ordem: 'situacao', area: null };
+try { ap.vista = localStorage.getItem('ct48-ap-vista') || 'lista'; } catch { /* sem armazenamento */ }
+const POR_PAGINA_AP = { lista: 20, cartoes: 12 };
 
 const semSinal = a => a.registrado && (!a.visto || Date.now() - a.visto >= ONLINE_MS);
 const FILTROS = {
@@ -133,28 +135,135 @@ function cartaoAparelho(a) {
   </article>`;
 }
 
+const areaDe = a => (a.fora ? 'Fora da área' : a.area || (a.lat != null ? 'Só GPS (sem Wi-Fi cadastrado)' : 'Sem posição'));
+const vencido = a => a.prazo && Date.now() > a.prazo;
+
+// Ordem "Situação": o que precisa de atenção vem primeiro
+function pesoSituacao(a) {
+  if (a.fora) return 0;
+  if (vencido(a)) return 1;
+  if (a.pessoa && semSinal(a)) return 2;
+  if (a.pessoa && bateriaBaixa(a)) return 3;
+  if (a.manutencao === 'perdido') return 4;
+  if (a.manutencao) return 5;
+  if (a.pessoa) return 6;
+  if (a.registrado) return 7;
+  return a.codigo ? 8 : 9;
+}
+const ORDENS = {
+  situacao: (a, b) => pesoSituacao(a) - pesoSituacao(b) || a.nome.localeCompare(b.nome),
+  nome: (a, b) => a.nome.localeCompare(b.nome),
+  bateria: (a, b) => (a.bateria ?? 999) - (b.bateria ?? 999) || a.nome.localeCompare(b.nome),
+  tempo: (a, b) => (a.desde ?? Infinity) - (b.desde ?? Infinity) || a.nome.localeCompare(b.nome),
+  area: (a, b) => areaDe(a).localeCompare(areaDe(b), 'pt-BR') || a.nome.localeCompare(b.nome)
+};
+
+/** Quadro por área: quantos CT48 em cada área do galpão (clicar filtra). */
+function renderAreasAparelhos() {
+  const grupos = new Map();
+  for (const a of aparelhos.filter(x => x.registrado && !x.manutencao)) {
+    const k = areaDe(a);
+    const g = grupos.get(k) ?? { nome: k, total: 0, uso: 0, livres: 0, alerta: 0 };
+    g.total++;
+    if (a.pessoa) g.uso++; else g.livres++;
+    if (a.fora || (a.pessoa && semSinal(a)) || vencido(a)) g.alerta++;
+    grupos.set(k, g);
+  }
+  const lista = [...grupos.values()].sort((a, b) => (b.nome === 'Fora da área') - (a.nome === 'Fora da área') || b.total - a.total);
+  $('#ap-areas').innerHTML = lista.map(g => `
+    <button type="button" class="ap-area${g.nome === 'Fora da área' ? ' fora' : ''}${ap.area === g.nome ? ' ativa' : ''}" data-ap-area="${esc(g.nome)}">
+      <span class="ap-area-nome">${esc(g.nome)}</span>
+      <b>${g.total}</b>
+      <span class="ap-area-det">${g.uso} em uso · ${g.livres} livre${g.livres === 1 ? '' : 's'}${g.alerta ? ` · <em>${g.alerta} com alerta</em>` : ''}</span>
+    </button>`).join('') || '<p class="muted">Nenhum aparelho com posição ainda.</p>';
+  $('#ap-area-limpar').hidden = !ap.area;
+}
+
+/** Na lista: só a ação principal aparece; as outras ficam no menu "⋯". */
+function botoesLista(a) {
+  const html = botoesAparelho(a);
+  const t = document.createElement('div');
+  t.innerHTML = html;
+  const todos = [...t.children];
+  const principal = todos.find(b => ['devolver'].includes(b.dataset.acao) || b.dataset.voltar || (!a.registrado && b.dataset.acao === 'codigo'));
+  const resto = todos.filter(b => b !== principal);
+  return (principal ? principal.outerHTML : '')
+    + (resto.length ? `<details class="mais-acoes"><summary class="btn mini ghost" aria-label="Mais ações">⋯</summary><div class="mais-menu">${resto.map(b => b.outerHTML).join('')}</div></details>` : '');
+}
+
+/** Uma linha da vista em lista. */
+function linhaAparelho(a) {
+  const e = estadoAparelho(a);
+  const quem = a.pessoa
+    ? `<b>${esc(a.pessoa.nome)}</b><span class="muted">${esc(a.pessoa.ident)} · há ${dur(Date.now() - a.desde)}</span>${a.prazo ? `<span class="${vencido(a) ? 'prazo-vencido' : 'muted'}">${vencido(a) ? 'Devia ter voltado às ' : 'Até '}${hora(a.prazo)}</span>` : ''}`
+    : a.manutencao ? `<span class="muted">${esc(a.manutencaoObs || MANUT[a.manutencao])}</span>`
+    : !a.registrado ? (a.codigo ? `<span class="muted">Código </span><b class="mono">${esc(a.codigo)}</b>` : '<span class="muted">Código vencido</span>') : '<span class="muted">—</span>';
+  const bat = a.bateria == null ? '<span class="muted">—</span>'
+    : `<span class="bat-mini${bateriaBaixa(a) ? ' baixa' : ''}${a.carregando ? ' carregando' : ''}"><i data-nivel="${a.bateria}"></i></span> <span class="${bateriaBaixa(a) ? 'bat-baixa' : ''}">${a.bateria}%${a.carregando ? ' ⚡' : ''}</span>`;
+  const sinal = !a.registrado ? '<span class="muted">—</span>' : !a.visto ? '<span class="muted">Nunca</span>'
+    : semSinal(a) ? `<span class="aviso">Sem sinal há ${dur(Date.now() - a.visto)}</span>` : '<span class="online">Online</span>';
+  return `<tr class="ap-tr ${e.cls}${a.fora ? ' fora' : ''}">
+    <td><b class="mono">${esc(a.nome)}</b><span class="muted mono pequeno-sn">${a.sn ? esc(a.sn) : '—'}</span></td>
+    <td class="ap-td-sit"><span class="pill ${e.pill}">${e.selo}</span>${a.fora ? ' <span class="pill bad">Fora da área</span>' : ''}</td>
+    <td class="ap-td-quem">${quem}</td>
+    <td>${a.registrado && !a.manutencao ? esc(areaDe(a)) : '<span class="muted">—</span>'}</td>
+    <td class="ap-td-bat">${bat}</td>
+    <td class="ap-td-sinal">${sinal}</td>
+    <td><div class="acoes">${botoesLista(a)}</div></td>
+  </tr>`;
+}
+
 function renderAparelhos() {
   for (const b of $$('[data-filtro]')) b.querySelector('b').textContent = aparelhos.filter(FILTROS[b.dataset.filtro]).length;
+  renderAreasAparelhos();
   const busca = semAcento(ap.busca.trim());
-  const lista = aparelhos.filter(FILTROS[ap.filtro]).filter(a => !busca
-    || semAcento([a.nome, a.sn, a.area, a.pessoa?.nome, a.pessoa?.ident].join(' ')).includes(busca));
+  const lista = aparelhos.filter(FILTROS[ap.filtro])
+    .filter(a => !ap.area || (a.registrado && !a.manutencao && areaDe(a) === ap.area))
+    .filter(a => !busca || semAcento([a.nome, a.sn, a.area, a.pessoa?.nome, a.pessoa?.ident].join(' ')).includes(busca))
+    .sort(ORDENS[ap.ordem]);
+  const pg = paginar(lista, 'aparelhos', POR_PAGINA_AP[ap.vista]);
   // Redesenha só quando algo muda (ou a cada 30 s, para os "há X min"), sem tirar o foco dos botões à toa
-  const assinatura = JSON.stringify([ap.filtro, busca, lista, Math.floor(Date.now() / 30000)]);
+  const assinatura = JSON.stringify([ap.filtro, busca, ap.vista, ap.ordem, ap.area, pg.pagina, pg.itens, Math.floor(Date.now() / 30000)]);
   if (assinatura === ap.assinatura) return;
   ap.assinatura = assinatura;
   const grade = $('#grade-aparelhos');
-  grade.innerHTML = lista.length
-    ? lista.map(cartaoAparelho).join('')
-    : `<div class="card"><p class="muted ap-nada">${aparelhos.length ? 'Nenhum aparelho com esse filtro.' : 'Nenhum aparelho cadastrado. Cadastre o primeiro acima.'}</p></div>`;
-  for (const i of grade.querySelectorAll('.mp-bat i')) i.style.width = i.dataset.nivel + '%';
+  grade.classList.toggle('vista-lista', ap.vista === 'lista');
+  if (!lista.length) {
+    grade.innerHTML = `<div class="card"><p class="muted ap-nada">${aparelhos.length ? 'Nenhum aparelho com esse filtro.' : 'Nenhum aparelho cadastrado. Cadastre o primeiro acima.'}</p></div>`;
+  } else if (ap.vista === 'lista') {
+    grade.innerHTML = `<div class="card ap-tabela-card"><div class="tabela-rolagem"><table class="ap-tabela">
+      <thead><tr><th>Aparelho</th><th>Situação</th><th>Com quem / observação</th><th>Área</th><th>Bateria</th><th>Sinal</th><th></th></tr></thead>
+      <tbody>${pg.itens.map(linhaAparelho).join('')}</tbody></table></div></div>`;
+  } else {
+    grade.innerHTML = pg.itens.map(cartaoAparelho).join('');
+  }
+  $('#ap-pag').innerHTML = htmlPaginacao(pg, 'aparelhos');
+  for (const i of grade.querySelectorAll('.mp-bat i, .bat-mini i')) i.style.width = i.dataset.nivel + '%';
 }
+registrarPaginacao('aparelhos', () => { ap.assinatura = ''; renderAparelhos(); });
 
 $$('[data-filtro]').forEach(b => b.addEventListener('click', () => {
   ap.filtro = b.dataset.filtro;
   $$('[data-filtro]').forEach(x => x.setAttribute('aria-pressed', x === b));
+  primeiraPagina('aparelhos');
   renderAparelhos();
 }));
-$('#ap-busca').addEventListener('input', e => { ap.busca = e.target.value; renderAparelhos(); });
+$('#ap-busca').addEventListener('input', e => { ap.busca = e.target.value; primeiraPagina('aparelhos'); renderAparelhos(); });
+$('#ap-ordem').addEventListener('change', e => { ap.ordem = e.target.value; primeiraPagina('aparelhos'); renderAparelhos(); });
+function mostrarVista() { $$('[data-ap-vista]').forEach(x => x.setAttribute('aria-pressed', x.dataset.apVista === ap.vista)); }
+mostrarVista();
+$$('[data-ap-vista]').forEach(b => b.addEventListener('click', () => {
+  ap.vista = b.dataset.apVista;
+  try { localStorage.setItem('ct48-ap-vista', ap.vista); } catch { /* sem armazenamento */ }
+  mostrarVista(); primeiraPagina('aparelhos'); renderAparelhos();
+}));
+$('#ap-areas').addEventListener('click', e => {
+  const b = e.target.closest('[data-ap-area]');
+  if (!b) return;
+  ap.area = ap.area === b.dataset.apArea ? null : b.dataset.apArea;
+  primeiraPagina('aparelhos'); renderAparelhos();
+});
+$('#ap-area-limpar').addEventListener('click', () => { ap.area = null; primeiraPagina('aparelhos'); renderAparelhos(); });
 
 $('#grade-aparelhos').addEventListener('click', async e => {
   const m = e.target.closest('[data-manut]');
@@ -225,4 +334,9 @@ $('#f-aparelho').addEventListener('submit', async e => {
     msg.textContent = `${a.nome} cadastrado. Digite o código ${a.codigo} no app do aparelho.`;
     atualizar();
   } catch (err) { msg.className = 'msg err'; msg.textContent = err.message; }
+});
+
+// Fecha o menu "⋯" ao clicar fora dele ou depois de escolher uma ação
+document.addEventListener('click', e => {
+  for (const d of $$('details.mais-acoes[open]')) if (!d.contains(e.target) || e.target.closest('.mais-menu button')) d.open = false;
 });

@@ -71,7 +71,8 @@ export function listarAlertas() {
       });
     }
 
-    if (a.token_hash && a.visto) {
+    // Em manutenção, quebrado ou perdido: parado de propósito, sinal e bateria não interessam
+    if (a.token_hash && a.visto && !a.manutencao) {
       const semSinal = agora - a.visto;
       if (a.pessoa ? semSinal > config.minutosSemSinal * MIN : semSinal > 12 * HORA) {
         add(a, {
@@ -82,7 +83,7 @@ export function listarAlertas() {
       }
     }
 
-    if (a.bateria != null && !a.carregando && a.bateria <= config.bateriaBaixa && a.bateria_em && agora - a.bateria_em < 30 * MIN) {
+    if (!a.manutencao && a.bateria != null && !a.carregando && a.bateria <= config.bateriaBaixa && a.bateria_em && agora - a.bateria_em < 30 * MIN) {
       add(a, {
         chave: `bateria:${a.id}:${a.desde ?? new Date().toDateString()}`, tipo: 'bateria', gravidade: a.pessoa ? 'media' : 'baixa', desde: a.bateria_em,
         titulo: `${a.nome} com bateria baixa (${a.bateria}%)`,

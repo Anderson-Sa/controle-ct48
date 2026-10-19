@@ -1,6 +1,6 @@
 // Regras dos aparelhos usadas pelas rotas do painel e do CT48.
 import { db, registrar } from './db.js';
-import { pessoaJSON } from './pessoas.js';
+import { pessoaJSON, turnoDaPessoa } from './pessoas.js';
 import { prazoDevolucao } from './alertas.js';
 import { dur } from './util.js';
 
@@ -19,7 +19,8 @@ export function aparelhoJSON(a) {
     codigo: pendente ? a.codigo_registro : null, codigoExpira: pendente ? a.codigo_expira : null,
     manutencao: a.manutencao, manutencaoObs: a.manutencao_obs, manutencaoDesde: a.manutencao_desde,
     bateria: a.bateria, carregando: !!a.carregando, bateriaEm: a.bateria_em,
-    prazo: a.pessoa && a.desde ? prazoDevolucao(a).limite : null
+    prazo: a.pessoa && a.desde ? prazoDevolucao(a).limite : null,
+    turno: a.pessoa ? (a.pessoa.startsWith('DIA:') ? 'Diaristas' : turnoDaPessoa(a.pessoa)?.nome ?? null) : null
   };
 }
 

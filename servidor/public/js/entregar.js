@@ -13,6 +13,16 @@ $$('[data-modo]').forEach(b => b.addEventListener('click', () => {
 
 function msgPessoa(texto, cls = '') { const m = $('#msg-pessoa'); m.textContent = texto; m.className = 'msg ' + cls; }
 
+/** Melhor CT48 para entregar agora: livre, online, sem manutenção e com mais bateria. */
+function sugestaoAparelho() {
+  const livres = aparelhos.filter(a => a.registrado && !a.pessoa && !a.manutencao && !a.fora && a.visto && Date.now() - a.visto < ONLINE_MS)
+    .sort((a, b) => (b.bateria ?? -1) - (a.bateria ?? -1) || a.nome.localeCompare(b.nome));
+  if (!livres.length) return '<span class="sugestao vazia">Nenhum CT48 livre e online agora.</span>';
+  const [m, ...outros] = livres;
+  return `<span class="sugestao"><span>Sugestão: entregue o <b class="tag-aparelho">${esc(m.nome)}</b></span>
+    <span class="muted">${m.bateria != null ? m.bateria + '% de bateria' : 'bateria desconhecida'}${m.carregando ? ', no carregador' : ''}${m.area ? ' · ' + esc(m.area) : ''}${outros.length ? ` · depois: ${outros.slice(0, 3).map(o => esc(o.nome)).join(', ')}` : ''}</span></span>`;
+}
+
 function selecionar(p) {
   pessoaSel = p;
   const box = $('#pessoa');
@@ -23,6 +33,7 @@ function selecionar(p) {
       + (p.bloqueio ? `<span class="pill bad">Bloqueado: ${esc(p.bloqueio.motivo)}. Desbloqueie na aba Pessoas.</span>` : '');
   }
   const impedido = !p || !!p.aparelho || !!p.bloqueio;
+  if (p && !impedido) box.insertAdjacentHTML('beforeend', sugestaoAparelho());
   $('#gerar').disabled = impedido;
   const dica = $('#dica-gerar');
   dica.hidden = !impedido;
@@ -126,13 +137,14 @@ function renderResumo() {
   const n = {
     livres: reg.filter(a => !a.pessoa && !a.manutencao).length,
     uso: aparelhos.filter(a => a.pessoa).length,
-    sinal: reg.filter(a => !a.visto || agora - a.visto >= ONLINE_MS).length,
+    // Em manutenção está parado de propósito: não conta como "sem sinal"
+    sinal: reg.filter(a => !a.manutencao && (!a.visto || agora - a.visto >= ONLINE_MS)).length,
     fora: aparelhos.filter(a => a.fora).length
   };
   const tom = { livres: n.livres ? 'ok' : 'warn', uso: '', sinal: n.sinal ? 'warn' : '', fora: n.fora ? 'bad' : '' };
   const badge = (id, v) => { const b = $(id); b.hidden = !v; b.textContent = v; };
   badge('#b-devolver', n.uso);
-  badge('#b-aparelhos', aparelhos.filter(a => a.fora || (a.registrado && (!a.visto || agora - a.visto >= ONLINE_MS))).length);
+  badge('#b-aparelhos', aparelhos.filter(a => a.fora || (a.registrado && !a.manutencao && (!a.visto || agora - a.visto >= ONLINE_MS))).length);
   renderFrota();
   for (const k in n) {
     const el = $('#st-' + k);
@@ -141,19 +153,40 @@ function renderResumo() {
   }
 }
 
+const uso = { busca: '', ordem: 'prazo' };
+const ORDENS_USO = {
+  prazo: (a, b) => (a.prazo ?? Infinity) - (b.prazo ?? Infinity),
+  tempo: (a, b) => a.desde - b.desde,
+  aparelho: (a, b) => a.nome.localeCompare(b.nome),
+  nome: (a, b) => a.pessoa.nome.localeCompare(b.pessoa.nome, 'pt-BR')
+};
+
 function renderEmUso() {
   renderResumo();
-  const uso = aparelhos.filter(a => a.pessoa).sort((a, b) => a.desde - b.desde);
-  $('#uso-contagem').textContent = uso.length === 1 ? '1 aparelho' : `${uso.length} aparelhos`;
-  $('#em-uso').innerHTML = uso.length
-    ? uso.map(a => `<div class="linha-uso">
+  const todos = aparelhos.filter(a => a.pessoa);
+  const busca = semAcento(uso.busca.trim());
+  const lista = todos.filter(a => !busca || semAcento([a.nome, a.pessoa.nome, a.pessoa.ident].join(' ')).includes(busca)).sort(ORDENS_USO[uso.ordem]);
+  const atrasados = todos.filter(a => a.prazo && Date.now() > a.prazo).length;
+  $('#uso-contagem').textContent = `${todos.length}${atrasados ? ` · ${atrasados} atrasado${atrasados > 1 ? 's' : ''}` : ''}`;
+  $('#uso-contagem').className = 'pill' + (atrasados ? ' bad' : '');
+  const pg = paginar(lista, 'em-uso', 10);
+  $('#em-uso').innerHTML = pg.itens.length
+    ? pg.itens.map(a => {
+      const atrasado = a.prazo && Date.now() > a.prazo;
+      return `<div class="linha-uso${atrasado ? ' atrasado' : ''}">
         <span class="avatar" aria-hidden="true">${esc(iniciais(a.pessoa.nome))}</span>
-        <span class="quem-usa"><b>${esc(a.pessoa.nome)}</b><span class="muted">${esc(a.pessoa.ident)} · há ${dur(Date.now() - a.desde)}</span></span>
+        <span class="quem-usa"><b>${esc(a.pessoa.nome)}</b><span class="muted">${esc(a.pessoa.ident)}${a.turno ? ' · ' + esc(a.turno) : ''} · há ${dur(Date.now() - a.desde)}</span></span>
+        <span class="prazo-uso">${a.prazo ? (atrasado ? `<b class="prazo-vencido">Atrasado ${dur(Date.now() - a.prazo)}</b>` : `<span class="muted">Devolver até</span> <b>${hora(a.prazo)}</b>`) : ''}</span>
         <span class="tag-aparelho">${esc(a.nome)}</span>
         <button type="button" class="btn mini" data-devolver="${a.id}">Receber devolução</button>
-      </div>`).join('')
-    : '<p class="muted vazio-uso">Nenhum aparelho em uso. Todos estão guardados.</p>';
+      </div>`;
+    }).join('')
+    : `<p class="muted vazio-uso">${todos.length ? 'Ninguém encontrado com essa busca.' : 'Nenhum aparelho em uso. Todos estão guardados.'}</p>`;
+  $('#uso-pag').innerHTML = htmlPaginacao(pg, 'em uso');
 }
+registrarPaginacao('em-uso', renderEmUso);
+$('#uso-busca').addEventListener('input', e => { uso.busca = e.target.value; primeiraPagina('em-uso'); renderEmUso(); });
+$('#uso-ordem').addEventListener('change', e => { uso.ordem = e.target.value; primeiraPagina('em-uso'); renderEmUso(); });
 
 $('#em-uso').addEventListener('click', async e => {
   const b = e.target.closest('[data-devolver]');

@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { db, registrar } from '../db.js';
 import { pessoa, pessoaJSON, comSituacao } from '../pessoas.js';
 import { lerCsvRh, importarRh } from '../rh.js';
+import { atrasosDaPessoa } from '../relatorios.js';
 import { adm } from '../middlewares.js';
 import { erro, chaveValida } from '../util.js';
 
@@ -59,7 +60,7 @@ rotas.get('/pessoas/:chave', adm, (req, res) => {
   const eventos = db.prepare(`SELECT h.t, h.evento, h.msg, a.nome AS aparelho FROM historico h LEFT JOIN aparelhos a ON a.id = h.aparelho_id
     WHERE h.pessoa = ? AND h.evento IN ('entrega', 'devolucao', 'bloqueio', 'saiu_area', 'manutencao', 'pessoa') ORDER BY h.t DESC LIMIT 60`).all(chave);
   const r = db.prepare("SELECT COUNT(*) AS n, MIN(t) AS primeiro FROM historico WHERE pessoa = ? AND evento = 'entrega'").get(chave);
-  res.json({ ...comSituacao(p), cargo: f?.cargo ?? null, setor: f?.setor ?? null, turnoRh: f?.turno ?? null, usos: r.n, primeiroUso: r.primeiro, eventos });
+  res.json({ ...comSituacao(p), cargo: f?.cargo ?? null, setor: f?.setor ?? null, turnoRh: f?.turno ?? null, usos: r.n, primeiroUso: r.primeiro, ...atrasosDaPessoa(chave), eventos });
 });
 
 // Bloqueio: quem perdeu ou quebrou aparelho fica sem receber outro até o ADM liberar

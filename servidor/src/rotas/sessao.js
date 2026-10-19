@@ -1,6 +1,6 @@
 // Login e logout do painel do ADM.
 import { Router } from 'express';
-import { db } from '../db.js';
+import { db, DEMO } from '../db.js';
 import { conferirSenha, criarSessao, encerrarSessao, limitador, SEGUNDOS_SESSAO } from '../auth.js';
 import { adm } from '../middlewares.js';
 import { erro, cookie } from '../util.js';
@@ -29,4 +29,4 @@ rotas.post('/logout', (req, res) => {
   res.json({ ok: true });
 });
 
-rotas.get('/me', adm, (req, res) => res.json({ id: req.adm.id, nome: req.adm.nome, login: req.adm.login }));
+rotas.get('/me', adm, (req, res) => res.json({ id: req.adm.id, nome: req.adm.nome, login: req.adm.login, demo: DEMO }));

@@ -15,6 +15,7 @@ async function carregarRelatorio(forcar) {
   renderRelatorio();
 }
 AO_ATUALIZAR.push(() => carregarRelatorio(false));
+registrarPaginacao('rel-aparelhos', () => rel.dados && renderRelatorio());
 
 // Escala "redonda" para o eixo: 0, metade e o topo
 function topoEixo(max) {
@@ -85,6 +86,7 @@ function renderRelatorio() {
     tile(k.mediaUsoMin != null ? dur(k.mediaUsoMin * 60000) : '–', 'Uso médio por entrega'),
     tile(k.pico.qtd, 'Pico ao mesmo tempo', k.pico.t ? `${new Date(k.pico.t).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} às ${hora(k.pico.t)}` : ''),
     tile(k.devolucoesQrPct != null ? k.devolucoesQrPct + '%' : '–', 'Devoluções por QR'),
+    tile(k.atrasos, 'Devoluções atrasadas', `${k.atrasosPct}% das entregas`, k.atrasos ? 'warn' : ''),
     tile(alertas, 'Alertas', `${k.saidasArea} saída${k.saidasArea === 1 ? '' : 's'} da área · ${k.qrFalsos} QR falso${k.qrFalsos === 1 ? '' : 's'}`, alertas ? 'bad' : '')
   ].join('');
 
@@ -106,11 +108,16 @@ function renderRelatorio() {
     valor: h.media, rotulo: `${h.hora}h`, rotuloLongo: `${String(h.hora).padStart(2, '0')}:00 às ${String(h.hora).padStart(2, '0')}:59`
   })), { formato: v => numFmt(v), rotuloDica: i => `${numFmt(i.valor)} aparelho${i.valor === 1 ? '' : 's'} em uso, em média` });
 
-  listaBarras($('#rel-aparelhos'), r.porAparelho.map(a => ({
+  const pgAp = paginar(r.porAparelho, 'rel-aparelhos', 10);
+  listaBarras($('#rel-aparelhos'), pgAp.itens.map(a => ({
     valor: a.horas,
     nome: `<span class="tag-aparelho">${esc(a.nome)}</span>${a.manutencao ? ` <span class="pill warn">${MANUT[a.manutencao]}</span>` : a.usos === 0 ? ' <span class="pill">Parado</span>' : ''}`,
     texto: `<b>${horasFmt(a.horas)}</b><span class="muted">${a.usos} uso${a.usos === 1 ? '' : 's'} · ${a.ocupacao}% do tempo</span>`
   })), 'Nenhum aparelho registrado.');
+  // Escala das barras igual em todas as páginas (o mais usado do período = barra cheia)
+  const maxAp = Math.max(...r.porAparelho.map(a => a.horas), 1);
+  for (const [i, el] of [...$$('#rel-aparelhos .lb-barra')].entries()) el.style.width = (pgAp.itens[i].horas / maxAp * 100) + '%';
+  $('#rel-aparelhos').insertAdjacentHTML('beforeend', htmlPaginacao(pgAp, 'aparelhos'));
 
   listaBarras($('#rel-setores'), r.porSetor.map(s => ({
     valor: s.horas, nome: esc(s.setor),
@@ -121,10 +128,67 @@ function renderRelatorio() {
     valor: p.horas, nome: `<span class="lb-pos">${i + 1}</span><span><b>${esc(p.nome)}</b> <span class="muted">${esc(p.ident)} · ${esc(p.setor)}</span></span>`,
     texto: `<b>${horasFmt(p.horas)}</b><span class="muted">${p.usos} uso${p.usos === 1 ? '' : 's'}</span>`
   })), 'Nenhum uso no período.');
+
+  renderTurnos(r.porTurno);
+  renderMapaCalor(r.mapaCalor);
+
+  listaBarras($('#rel-problemas'), r.comProblema.map(a => ({
+    valor: a.total,
+    nome: `<span class="tag-aparelho">${esc(a.nome)}</span>${a.manutencao ? ` <span class="pill warn">${MANUT[a.manutencao]}</span>` : ''}`,
+    texto: `<b>${a.total} ocorrência${a.total === 1 ? '' : 's'}</b><span class="muted">${[
+      a.saidas && `${a.saidas} saída${a.saidas > 1 ? 's' : ''} da área`, a.qrFalsos && `${a.qrFalsos} QR falso${a.qrFalsos > 1 ? 's' : ''}`,
+      a.manutencoes && `${a.manutencoes} manutenção${a.manutencoes > 1 ? 'ões' : ''}`, a.bloqueios && `${a.bloqueios} bloqueio${a.bloqueios > 1 ? 's' : ''}`
+    ].filter(Boolean).join(' · ')}</span>`
+  })), 'Nenhum problema registrado no período.');
+
+  listaBarras($('#rel-atrasos'), r.maisAtrasam.map((p, i) => ({
+    valor: p.atrasos, nome: `<span class="lb-pos">${i + 1}</span><span><b>${esc(p.nome)}</b> <span class="muted">${esc(p.turno)} · ${esc(p.setor)}</span></span>`,
+    texto: `<b>${p.atrasos} atraso${p.atrasos > 1 ? 's' : ''}</b><span class="muted">em média ${dur(p.atrasoMedioMin * 60000)} · ${p.usos} uso${p.usos === 1 ? '' : 's'}</span>`
+  })), 'Ninguém devolveu atrasado no período. 👏');
+}
+
+/** Tabela dos turnos lado a lado, com barra das horas de uso. */
+function renderTurnos(turnos) {
+  const el = $('#rel-turnos');
+  if (!turnos.length) { el.innerHTML = '<p class="muted h-vazio">Nenhum uso no período.</p>'; return; }
+  const max = Math.max(...turnos.map(t => t.horas), 1);
+  el.innerHTML = `<div class="tabela-rolagem"><table class="rel-turnos">
+    <thead><tr><th>Turno</th><th>Horas de uso</th><th>Entregas</th><th>Uso médio</th><th>Atrasos</th><th>Atraso médio</th></tr></thead>
+    <tbody>${turnos.map(t => `<tr>
+      <td><b>${esc(t.turno)}</b></td>
+      <td class="rt-horas"><span class="lb-trilho"><span class="lb-barra" data-larg="${t.horas / max * 100}"></span></span><b>${horasFmt(t.horas)}</b></td>
+      <td>${t.usos}</td>
+      <td>${t.mediaUsoMin != null ? dur(t.mediaUsoMin * 60000) : '–'}</td>
+      <td>${t.atrasos ? `<b class="${t.atrasos / Math.max(t.usos, 1) > 0.08 ? 'prazo-vencido' : ''}">${t.atrasos}</b> <span class="muted">(${Math.round(t.atrasos / Math.max(t.usos, 1) * 100)}%)</span>` : '0'}</td>
+      <td>${t.atrasos ? dur(t.atrasoMedioMin * 60000) : '–'}</td>
+    </tr>`).join('')}</tbody></table></div>`;
+  for (const b of el.querySelectorAll('.lb-barra')) b.style.width = b.dataset.larg + '%';
+}
+
+/** Mapa de calor: dias da semana (linhas) × horas (colunas), uma cor só, do claro ao escuro. */
+function renderMapaCalor(mapa) {
+  const el = $('#rel-mapa');
+  const ordem = [1, 2, 3, 4, 5, 6, 0];   // segunda a domingo
+  const NOMES_DIA = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const valores = mapa.flat().filter(v => v != null);
+  if (!valores.length) { el.innerHTML = '<p class="muted h-vazio">Período curto demais para o mapa.</p>'; return; }
+  const max = Math.max(...valores, 1);
+  el.innerHTML = `<div class="mapa-calor">
+    <span></span>${Array.from({ length: 24 }, (_, h) => `<span class="mc-hora">${h % 3 === 0 ? h + 'h' : ''}</span>`).join('')}
+    ${ordem.map(d => `<span class="mc-dia">${NOMES_DIA[d]}</span>${mapa[d].map((v, h) => v == null
+      ? `<span class="mc-cel vazia" title="${NOMES_DIA[d]} ${h}h: sem dados no período"></span>`
+      : `<span class="mc-cel" data-int="${v / max}" title="${NOMES_DIA[d]}, ${String(h).padStart(2, '0')}h: ${numFmt(v)} aparelhos em uso em média"></span>`).join('')}`).join('')}
+  </div>
+  <div class="mc-legenda"><span>0</span><span class="mc-escala"></span><span>${numFmt(max)} aparelhos</span></div>`;
+  for (const c of el.querySelectorAll('.mc-cel[data-int]')) {
+    const i = Number(c.dataset.int);
+    c.style.background = `color-mix(in srgb, var(--accent) ${Math.round(8 + i * 92)}%, var(--surface))`;
+  }
 }
 
 $$('[data-rel-dias]').forEach(b => b.addEventListener('click', () => {
   rel.dias = Number(b.dataset.relDias);
+  primeiraPagina('rel-aparelhos');
   $$('[data-rel-dias]').forEach(x => x.setAttribute('aria-pressed', x === b));
   carregarRelatorio(true);
 }));
@@ -133,9 +197,9 @@ $('#rel-csv').addEventListener('click', () => {
   if (!rel.dados) return;
   const cel = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
   const COMO = { qr: 'QR de devolução', painel: 'Recebido no painel', bloqueio: 'Bloqueio remoto', perdido: 'Marcado como perdido', 'sem registro': 'Sem registro de devolução' };
-  const linhas = [['Aparelho', 'Pessoa', 'Identificação', 'Setor', 'Entregue em', 'Devolvido em', 'Tempo de uso', 'Como terminou']]
-    .concat(rel.dados.sessoes.map(s => [s.aparelho, s.nome, s.ident, s.setor, dataHora(s.inicio), s.fim ? dataHora(s.fim) : 'Ainda em uso',
-      dur((s.fim ?? Date.now()) - s.inicio), s.fim ? COMO[s.como] ?? '' : '']));
+  const linhas = [['Aparelho', 'Pessoa', 'Identificação', 'Setor', 'Turno', 'Entregue em', 'Devolvido em', 'Tempo de uso', 'Como terminou', 'Atraso']]
+    .concat(rel.dados.sessoes.map(s => [s.aparelho, s.nome, s.ident, s.setor, s.turno, dataHora(s.inicio), s.fim ? dataHora(s.fim) : 'Ainda em uso',
+      dur((s.fim ?? Date.now()) - s.inicio), s.fim ? COMO[s.como] ?? '' : '', s.atrasoMin ? dur(s.atrasoMin * 60000) : '']));
   const csv = '﻿' + linhas.map(l => l.map(cel).join(';')).join('\r\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));

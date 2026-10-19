@@ -1,7 +1,7 @@
 // Servidor do Controle de CT48: API do painel do ADM, API do app do CT48 e os arquivos do painel.
 import express from 'express';
 import { fileURLToPath } from 'node:url';
-import { db } from './db.js';
+import { db, DEMO } from './db.js';
 import { config } from './config.js';
 import { erro } from './util.js';
 import { rotas as sessao } from './rotas/sessao.js';
@@ -49,7 +49,18 @@ app.use((err, req, res, next) => {
   erro(res, 500, 'Erro interno no servidor.');
 });
 
-const porta = Number(process.env.PORTA) || config.porta;
+// Demonstração: aparelhos de exemplo continuam "falando" com o servidor e gastando bateria devagar.
+// Os que foram gerados sem sinal ficam sem sinal (só renova quem respondeu nos últimos 2 minutos).
+if (DEMO) {
+  setInterval(() => {
+    const agora = Date.now();
+    db.prepare('UPDATE aparelhos SET visto = ?, posicao_em = ? WHERE token_hash IS NOT NULL AND visto > ?').run(agora, agora, agora - 120000);
+    db.prepare('UPDATE aparelhos SET bateria = MAX(5, bateria - 1), bateria_em = ? WHERE pessoa IS NOT NULL AND carregando = 0 AND visto > ? AND abs(random()) % 30 = 0').run(agora, agora - 120000);
+    db.prepare('UPDATE aparelhos SET bateria = MIN(100, bateria + 1), bateria_em = ? WHERE carregando = 1 AND abs(random()) % 3 = 0').run(agora);
+  }, 10000);
+}
+
+const porta = Number(process.env.PORTA) || (DEMO ? 3200 : config.porta);
 app.listen(porta, err => {
   if (err) {
     console.error(err.code === 'EADDRINUSE'
@@ -60,5 +71,6 @@ app.listen(porta, err => {
   const adms = db.prepare('SELECT COUNT(*) AS n FROM adms').get().n;
   console.log(`Controle de CT48 rodando em http://localhost:${porta}`);
   if (!adms) console.log('Nenhum ADM cadastrado ainda. Rode: npm run criar-adm');
+  if (DEMO) console.log('MODO DEMONSTRAÇÃO: dados de exemplo em dados/demo.db (o banco real não é usado). Login: demo / demo1234');
   if (SIMULADOR) console.log(`Simulador de CT48 (só para testes): http://localhost:${porta}/simulador`);
 });

@@ -4,12 +4,16 @@
   "private": true,
   "type": "module",
   "description": "Servidor e painel do ADM do Controle de CT48",
-  "engines": { "node": ">=22.13" },
+  "engines": {
+    "node": ">=22.13"
+  },
   "scripts": {
     "start": "node src/index.js",
     "simulador": "node src/index.js --simulador",
     "criar-adm": "node scripts/criar-adm.js",
-    "importar-rh": "node scripts/importar-rh.js"
+    "importar-rh": "node scripts/importar-rh.js",
+    "demo": "node scripts/gerar-demo.js && node src/index.js --demo",
+    "demo:abrir": "node src/index.js --demo"
   },
   "dependencies": {
     "express": "^5.1.0",

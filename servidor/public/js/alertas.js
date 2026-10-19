@@ -30,6 +30,7 @@ async function carregarAlertas() {
   if (aba === 'alertas') renderAlertas();
 }
 AO_ATUALIZAR.push(carregarAlertas);
+registrarPaginacao('alertas', () => { al.assinatura = ''; renderAlertas(); });
 
 function avisar(novos) {
   try {
@@ -55,8 +56,9 @@ function renderAlertas() {
   $('#al-n-ativos').textContent = ativos.length;
   $('#al-n-resolvidos').textContent = resolvidos.length;
   $('#al-todos').hidden = al.ver !== 'ativos' || !ativos.length;
-  const lista = al.ver === 'ativos' ? ativos : resolvidos;
-  const assinatura = JSON.stringify([al.ver, lista.map(a => a.chave + a.titulo), Math.floor(Date.now() / 30000)]);
+  const todos = al.ver === 'ativos' ? ativos : resolvidos;
+  const pg = paginar(todos, 'alertas', 10), lista = pg.itens;
+  const assinatura = JSON.stringify([al.ver, pg.pagina, lista.map(a => a.chave + a.titulo), Math.floor(Date.now() / 30000)]);
   if (assinatura === al.assinatura) return;
   al.assinatura = assinatura;
   $('#lista-alertas').innerHTML = lista.length ? lista.map(a => `
@@ -72,12 +74,13 @@ function renderAlertas() {
         ${a.aparelho ? `<button type="button" class="btn mini ghost" data-al-ver-ap="${esc(a.aparelho.nome)}">Ver aparelho</button>` : ''}
         ${a.resolvido ? '' : `<button type="button" class="btn mini ghost" data-al-resolver="${esc(a.chave)}">Resolver</button>`}
       </div>
-    </article>`).join('')
+    </article>`).join('') + htmlPaginacao(pg, 'alertas')
     : `<div class="al-vazio">${svg('<circle cx="12" cy="12" r="9"/><path d="m8 12.5 3 3 5-6"/>')}<b>${al.ver === 'ativos' ? 'Tudo certo por aqui' : 'Nenhum alerta resolvido'}</b><span class="muted">${al.ver === 'ativos' ? 'Nenhum aparelho precisa de atenção agora.' : 'Os alertas que você resolver aparecem aqui enquanto a situação continuar.'}</span></div>`;
 }
 
 $$('[data-al-ver]').forEach(b => b.addEventListener('click', () => {
   al.ver = b.dataset.alVer;
+  primeiraPagina('alertas');
   $$('[data-al-ver]').forEach(x => x.setAttribute('aria-pressed', x === b));
   renderAlertas();
 }));

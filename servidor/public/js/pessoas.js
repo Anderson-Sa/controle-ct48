@@ -14,9 +14,11 @@ async function carregarPessoas() {
 AO_ATUALIZAR.push(carregarPessoas);
 
 function renderPessoas(r) {
+  pes.ultima = r;
   const t = r.totais;
+  const pg = paginar(r.itens, 'pessoas', 15);
   $('#pes-totais').textContent = `${t.clt} funcionários na base de RH · ${t.dia} diaristas · ${t.uso} com aparelho agora · ${t.bloqueados} bloqueado${t.bloqueados === 1 ? '' : 's'}`;
-  $('#pes-lista').innerHTML = r.itens.length ? r.itens.map(p => `
+  $('#pes-lista').innerHTML = pg.itens.length ? pg.itens.map(p => `
     <button type="button" class="pes-item${p.chave === pes.sel ? ' sel' : ''}${p.bloqueio ? ' bloq' : ''}" data-pessoa="${esc(p.chave)}">
       <span class="avatar${p.tipo === 'DIA' ? ' dia' : ''}" aria-hidden="true">${esc(iniciais(p.nome))}</span>
       <span class="pes-txt"><b>${esc(p.nome)}</b><span class="muted">${esc(p.ident)}${p.setor ? ' · ' + esc(p.setor) : ''}${p.tipo === 'DIA' ? ' · diarista' : ''}</span></span>
@@ -26,9 +28,11 @@ function renderPessoas(r) {
         ${!p.aparelho && !p.bloqueio ? `<span class="muted pequeno-n">${p.usos ? `${p.usos} uso${p.usos > 1 ? 's' : ''}` : 'nunca usou'}</span>` : ''}
       </span>
     </button>`).join('')
-    + (r.total > r.itens.length ? `<p class="muted pequeno pes-mais">Mostrando ${r.itens.length} de ${r.total}. Use a busca para achar quem falta.</p>` : '')
+    + (r.total > r.itens.length ? `<p class="muted pequeno pes-mais">A lista mostra as primeiras ${r.itens.length} de ${r.total}. Use a busca para achar quem falta.</p>` : '')
     : `<p class="muted h-vazio">${pes.busca || pes.filtro || pes.tipo ? 'Ninguém encontrado com esses filtros.' : 'Nenhuma pessoa cadastrada. Importe a base do RH.'}</p>`;
+  $('#pes-pag').innerHTML = htmlPaginacao(pg, 'pessoas');
 }
+registrarPaginacao('pessoas', () => pes.ultima && renderPessoas(pes.ultima));
 
 async function carregarDetalhe(chave, silencioso) {
   let p;
@@ -48,6 +52,8 @@ async function carregarDetalhe(chave, silencioso) {
     <div class="pd-numeros">
       <div><b>${p.usos}</b><span>vezes que pegou aparelho</span></div>
       <div><b>${p.primeiroUso ? new Date(p.primeiroUso).toLocaleDateString('pt-BR') : '—'}</b><span>primeiro uso</span></div>
+      <div class="${p.atrasos ? 'tem-atraso' : ''}"><b>${p.atrasos}</b><span>devoluções atrasadas em 90 dias${p.atrasos ? ` (em média ${dur(p.atrasoMedioMin * 60000)})` : ''}</span></div>
+      <div><b>${p.usos90 ? Math.round((1 - p.atrasos / p.usos90) * 100) + '%' : '—'}</b><span>devolvidas no prazo (90 dias)</span></div>
     </div>
     ${ap ? `<div class="pd-uso"><span class="tag-aparelho">${esc(ap.nome)}</span><span>Com o aparelho desde ${hora(ap.desde)} (há ${dur(Date.now() - ap.desde)})${ap.prazo ? ` · ${Date.now() > ap.prazo ? '<b class="prazo-vencido">devia ter voltado às ' + hora(ap.prazo) + '</b>' : 'devolver até ' + hora(ap.prazo)}` : ''}</span></div>` : ''}
     ${p.bloqueio
@@ -111,14 +117,15 @@ $('#pes-detalhe').addEventListener('click', async e => {
 
 $('#pes-busca').addEventListener('input', e => {
   clearTimeout(pes.timer);
-  pes.timer = setTimeout(() => { pes.busca = e.target.value.trim(); carregarPessoas(); }, 250);
+  pes.timer = setTimeout(() => { pes.busca = e.target.value.trim(); primeiraPagina('pessoas'); carregarPessoas(); }, 250);
 });
 $$('[data-pes-filtro]').forEach(b => b.addEventListener('click', () => {
   pes.filtro = b.dataset.pesFiltro;
+  primeiraPagina('pessoas');
   $$('[data-pes-filtro]').forEach(x => x.setAttribute('aria-pressed', x === b));
   carregarPessoas();
 }));
-$('#pes-tipo').addEventListener('change', e => { pes.tipo = e.target.value; carregarPessoas(); });
+$('#pes-tipo').addEventListener('change', e => { pes.tipo = e.target.value; primeiraPagina('pessoas'); carregarPessoas(); });
 
 /* Importar base do RH */
 let csvRh = null;

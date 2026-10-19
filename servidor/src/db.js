@@ -6,7 +6,11 @@ import { join } from 'node:path';
 const pasta = fileURLToPath(new URL('../dados/', import.meta.url));
 mkdirSync(pasta, { recursive: true });
 
-export const db = new DatabaseSync(join(pasta, 'ct48.db'));
+/** Com --demo o servidor usa um banco separado, com dados de exemplo (npm run demo). O banco real não é tocado. */
+export const DEMO = process.argv.includes('--demo');
+export const ARQUIVO_BANCO = join(pasta, DEMO ? 'demo.db' : 'ct48.db');
+
+export const db = new DatabaseSync(ARQUIVO_BANCO);
 
 db.exec(`
   PRAGMA journal_mode = WAL;
