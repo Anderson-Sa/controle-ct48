@@ -19,7 +19,8 @@ e o painel mostra em tempo real onde está cada aparelho, com quem e o que preci
 </div>
 
 <p align="center">
-  <img src="docs/imagens/painel-aparelhos.png" alt="Painel do ADM, seção Aparelhos: cartões com o mini CT48 mostrando o estado de cada aparelho" width="900">
+  <img src="docs/imagens/modo-tv.png" alt="Modo TV do painel: indicadores grandes, áreas do galpão com um ponto por CT48, alertas agrupados e movimento recente" width="960">
+  <br><sub><b>Modo TV</b> para um monitor na sala do ADM, aqui com a demonstração de 64 CT48 (dados fictícios)</sub>
 </p>
 
 ---
@@ -29,25 +30,31 @@ e o painel mostra em tempo real onde está cada aparelho, com quem e o que preci
 | | |
 |---|---|
 | 🔐 **Bloqueio por padrão** | O CT48 fica em modo quiosque. Só abre os apps da empresa depois de ler o QR de liberação. |
-| 📲 **Entrega com QR** | O ADM busca o funcionário (matrícula) ou o diarista (CPF) e gera um QR que vale 2 minutos e libera **um** aparelho. |
-| ↩️ **Devolução com QR** | No fim do turno, um único QR de devolução bloqueia todos os aparelhos que o lerem. |
-| 🚨 **Alertas** | Aparelho não devolvido depois do turno, fora da área da empresa, sem sinal, com bateria baixa, perdido ou QR falso. Com som e notificação no navegador. |
-| 📍 **Localização** | Área pelo roteador Wi-Fi do galpão (mais preciso lá dentro) e GPS com cerca virtual. |
-| 👥 **Pessoas** | Quem está com aparelho, histórico de cada um, bloqueio de quem perdeu ou quebrou e importação da base do RH em CSV. |
-| 📊 **Relatórios** | Entregas, horas de uso, pico de aparelhos ao mesmo tempo, uso por hora, por aparelho, por setor e por pessoa. Exporta CSV e PDF. |
+| 📲 **Entrega com QR** | O ADM busca o funcionário (matrícula) ou o diarista (CPF) e gera um QR que vale 2 minutos e libera **um** aparelho. O painel **sugere qual CT48 entregar** (o livre com mais bateria). |
+| ↩️ **Devolução com QR** | Um único QR de devolução bloqueia todos os aparelhos que o lerem. O **fim de turno guiado** mostra quem do turno ainda está com aparelho. |
+| 🚨 **Alertas** | Não devolvido depois do turno, fora da área, sem sinal, bateria baixa, perdido ou QR falso. Com som e notificação no navegador. |
+| 📺 **Modo TV** | Tela cheia para monitor: indicadores grandes, áreas com um ponto por CT48, alertas agrupados e movimento recente, ao vivo. |
+| 📍 **Localização** | Área pelo roteador Wi-Fi do galpão (mais preciso lá dentro) e GPS com cerca virtual. Quadro com quantos CT48 há em cada área. |
+| 🗂️ **Feito para frota grande** | Aparelhos em lista ou cartões, ordenação, filtros e páginas (1, 2, 3…) em todas as listas longas. |
+| 👥 **Pessoas** | Quem está com aparelho, histórico, atrasos de cada um, bloqueio de quem perdeu ou quebrou e importação da base do RH em CSV. |
+| 📊 **Relatórios** | Entregas, horas de uso, pico, uso por hora, comparação dos turnos, mapa de calor, aparelhos com mais problemas e quem mais atrasa. Exporta CSV e PDF. |
 | 🛠️ **Manutenção** | Marca o CT48 como em manutenção, quebrado ou perdido: ele não pode ser liberado até voltar. |
-| 🧪 **Simulador** | Um CT48 de mentira no navegador para testar tudo sem o aparelho. |
+| 🧪 **Demonstração e simulador** | `npm run demo` abre o painel com 64 CT48 e 30 dias de uso fictícios; o simulador faz o papel do aparelho no navegador. |
 
 ## 🖥️ Telas
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/imagens/painel-entregar.png" alt="Seção Entregar do painel"><p align="center"><b>Entregar</b>: busca a pessoa e gera o QR de liberação</p></td>
-    <td width="50%"><img src="docs/imagens/painel-alertas.png" alt="Seção Alertas do painel"><p align="center"><b>Alertas</b>: o que precisa de atenção agora</p></td>
+    <td width="50%"><img src="docs/imagens/painel-aparelhos.png" alt="Seção Aparelhos em lista, com o quadro por área"><p align="center"><b>Aparelhos</b>: lista com situação, bateria e sinal, e o quadro por área</p></td>
+    <td width="50%"><img src="docs/imagens/painel-entregar.png" alt="Seção Entregar do painel"><p align="center"><b>Entregar</b>: busca a pessoa, gera o QR e acompanha quem está em uso</p></td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/imagens/simulador.png" alt="Simulador de CT48 no navegador"><p align="center"><b>Simulador</b>: bancada de testes sem o aparelho</p></td>
-    <td width="50%"><img src="docs/imagens/login.png" alt="Tela de login do painel"><p align="center"><b>Login</b> do painel do ADM</p></td>
+    <td width="50%"><img src="docs/imagens/painel-devolver.png" alt="Seção Devolver com o fim de turno guiado"><p align="center"><b>Devolver</b>: QR de devolução e fim de turno guiado</p></td>
+    <td width="50%"><img src="docs/imagens/painel-alertas.png" alt="Seção Alertas do painel"><p align="center"><b>Alertas</b>: o que precisa de atenção, do mais urgente ao aviso</p></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/imagens/painel-relatorios.png" alt="Relatórios com gráficos, comparação dos turnos e mapa de calor"><p align="center"><b>Relatórios</b>: uso, picos, turnos, mapa de calor e atrasos</p></td>
+    <td width="50%"><img src="docs/imagens/simulador.png" alt="Simulador de CT48 no navegador"><p align="center"><b>Simulador</b>: bancada de testes sem o aparelho</p><img src="docs/imagens/login.png" alt="Tela de login do painel"><p align="center"><b>Login</b> do painel do ADM</p></td>
   </tr>
 </table>
 
@@ -89,6 +96,16 @@ sequenceDiagram
 - **Painel:** HTML, CSS e JavaScript puros, sem framework e sem nada carregado de fora (política de segurança de conteúdo restrita). Tema claro e escuro.
 
 ## 🚀 Como rodar
+
+### Ver funcionando em 1 minuto
+
+```sh
+cd servidor
+npm install
+npm run demo
+```
+
+Abra `http://localhost:3200` e entre com `demo` / `demo1234`: são 64 CT48, ~180 funcionários e 30 dias de uso, tudo fictício, num banco separado. O Modo TV fica em `http://localhost:3200/#tv`.
 
 ### Servidor e painel
 
