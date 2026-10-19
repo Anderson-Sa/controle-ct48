@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="fundo">#0E1921</color>
+    <color name="cartao">#1B2A35</color>
+    <color name="texto">#E7EFF4</color>
+    <color name="texto_fraco">#8FA2AF</color>
+    <color name="ok">#45D98A</color>
+    <color name="erro">#FF6E61</color>
+    <color name="destaque">#F39C12</color>
+
+    <style name="Tema" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/fundo</item>
+        <item name="android:statusBarColor">@color/fundo</item>
+        <item name="android:navigationBarColor">@color/fundo</item>
+        <item name="android:colorAccent">@color/destaque</item>
+        <item name="android:textColor">@color/texto</item>
+    </style>
+
+    <style name="Rotulo">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/texto_fraco</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:fontFamily">monospace</item>
+        <item name="android:letterSpacing">0.08</item>
+    </style>
+
+    <style name="Titulo">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/texto</item>
+        <item name="android:textSize">26sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="Texto">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/texto_fraco</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <style name="Campo">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/texto</item>
+        <item name="android:textColorHint">@color/texto_fraco</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:layout_marginBottom">16dp</item>
+    </style>
+</resources>

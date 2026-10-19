@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Controle de CT48</string>
+    <string name="bloqueado_titulo">Aparelho bloqueado</string>
+    <string name="bloqueado_instrucao">Peça ao ADM o QR de liberação e aperte a tecla de leitura.</string>
+    <string name="manutencao_titulo">Aparelho em manutenção</string>
+    <string name="manutencao_instrucao">O ADM tirou este aparelho de uso. Entregue-o ao ADM.</string>
+    <string name="liberado_rodape">Para devolver, abra esta tela, aperte a tecla de leitura e aponte para o QR de devolução do ADM.</string>
+    <string name="registro_titulo">Registrar aparelho</string>
+    <string name="registro_instrucao">No painel do ADM, cadastre este aparelho na aba Aparelhos e digite aqui o código que aparecer.</string>
+    <string name="registro_servidor">Endereço do servidor</string>
+    <string name="registro_codigo">Código de registro</string>
+    <string name="registro_botao">Registrar</string>
+    <string name="canal_nome">Monitoramento do aparelho</string>
+    <string name="notificacao_texto">Aparelho da empresa. A localização é enviada durante o uso.</string>
+</resources>

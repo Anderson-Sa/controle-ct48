@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Controle de CT48</title>
+<link rel="stylesheet" href="css/painel.css">
+<!-- Ordem importa: base primeiro, início por último -->
+<script src="js/base.js" defer></script>
+<script src="js/estrutura.js" defer></script>
+<script src="js/entregar.js" defer></script>
+<script src="js/devolver.js" defer></script>
+<script src="js/aparelhos.js" defer></script>
+<script src="js/historico.js" defer></script>
+<script src="js/areas.js" defer></script>
+<script src="js/alertas.js" defer></script>
+<script src="js/pessoas.js" defer></script>
+<script src="js/relatorios.js" defer></script>
+<script src="js/config.js" defer></script>
+<script src="js/inicio.js" defer></script>
+</head>
+<body>
+
+<div id="tela-login" class="login" hidden>
+  <div class="login-caixa">
+    <div class="login-arte" aria-hidden="true">
+      <img src="img/ct48.png" alt="">
+    </div>
+    <form id="f-login" class="login-form">
+      <div class="eyebrow">Painel do ADM</div>
+      <h1>Controle de CT48</h1>
+      <p class="muted">Entregue, receba e acompanhe os coletores da operação.</p>
+      <label>Login <input name="login" autocomplete="username" required></label>
+      <label>Senha <input name="senha" type="password" autocomplete="current-password" required></label>
+      <p id="login-msg" class="msg err" role="alert"></p>
+      <button class="btn primary">Entrar</button>
+    </form>
+  </div>
+</div>
+
+<div id="tela-painel" class="app" hidden>
+  <aside class="lateral">
+    <div class="marca">
+      <span class="marca-logo"><img src="img/ct48.png" alt=""></span>
+      <div><div class="eyebrow">Painel do ADM</div><b>Controle de CT48</b></div>
+    </div>
+    <nav class="menu" role="tablist" aria-label="Seções do painel">
+      <div class="menu-grupo">Operação</div>
+      <button type="button" role="tab" data-aba="entregar" aria-selected="true"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M5 21h14"/></svg></span><span class="mt"><b>Entregar</b><small>Liberar um CT48</small></span><kbd>1</kbd></button>
+      <button type="button" role="tab" data-aba="devolver" aria-selected="false"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9M7 14l5-5 5 5"/><path d="M5 3h14"/></svg></span><span class="mt"><b>Devolver</b><small>QR de devolução</small></span><span class="badge" id="b-devolver" hidden></span><kbd>2</kbd></button>
+      <button type="button" role="tab" data-aba="alertas" aria-selected="false"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 21h4"/></svg></span><span class="mt"><b>Alertas</b><small>O que precisa de atenção</small></span><span class="badge bad" id="b-alertas" hidden></span><kbd>3</kbd></button>
+      <div class="menu-grupo">Gestão</div>
+      <button type="button" role="tab" data-aba="aparelhos" aria-selected="false"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M9 6.5h6v6H9zM10 16.5h4"/></svg></span><span class="mt"><b>Aparelhos</b><small>Situação e local</small></span><span class="badge bad" id="b-aparelhos" hidden></span><kbd>4</kbd></button>
+      <button type="button" role="tab" data-aba="pessoas" aria-selected="false"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/></svg></span><span class="mt"><b>Pessoas</b><small>Funcionários e diaristas</small></span><kbd>5</kbd></button>
+      <button type="button" role="tab" data-aba="historico" aria-selected="false"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span class="mt"><b>Histórico</b><small>Linha do tempo e CSV</small></span><kbd>6</kbd></button>
+      <button type="button" role="tab" data-aba="relatorios" aria-selected="false"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span><span class="mt"><b>Relatórios</b><small>Uso, picos e ociosidade</small></span><kbd>7</kbd></button>
+      <div class="menu-grupo">Sistema</div>
+      <button type="button" role="tab" data-aba="areas" aria-selected="false"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 9.5a12 12 0 0 1 17 0M6.5 12.8a7.5 7.5 0 0 1 11 0M9.5 16a3 3 0 0 1 5 0M12 19.5h.01"/></svg></span><span class="mt"><b>Áreas Wi-Fi</b><small>Roteadores do galpão</small></span><kbd>8</kbd></button>
+      <button type="button" role="tab" data-aba="config" aria-selected="false"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></span><span class="mt"><b>Configurações</b><small>Turnos, cerca e ADMs</small></span><kbd>9</kbd></button>
+    </nav>
+
+    <div class="frota" aria-label="Situação da frota">
+      <div class="frota-cab"><span>Frota agora</span><b id="fr-total">–</b></div>
+      <div class="frota-barra" aria-hidden="true"><span class="f-uso" id="fb-uso"></span><span class="f-livre" id="fb-livre"></span><span class="f-manut" id="fb-manut"></span><span class="f-off" id="fb-off"></span></div>
+      <ul class="frota-leg">
+        <li><i class="f-uso"></i>Em uso<b id="fr-uso">–</b></li>
+        <li><i class="f-livre"></i>Livres<b id="fr-livre">–</b></li>
+        <li><i class="f-manut"></i>Manutenção<b id="fr-manut">–</b></li>
+        <li><i class="f-off"></i>Sem registro<b id="fr-off">–</b></li>
+      </ul>
+      <button type="button" id="fr-alerta" class="frota-alerta" data-ir="aparelhos" hidden></button>
+    </div>
+
+    <div class="lateral-pe">
+      <div id="status-vivo" class="status-vivo"><span class="ponto"></span><span id="conexao">Conectando…</span></div>
+      <div class="usuario">
+        <span class="avatar" id="adm-ini" aria-hidden="true"></span>
+        <div><b id="adm-nome"></b><span class="muted">Administrador</span></div>
+        <button id="sair" type="button" class="btn mini ghost">Sair</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="conteudo">
+    <header class="cab-pagina">
+      <div>
+        <h1 id="titulo-pagina">Entregar aparelho</h1>
+        <p id="sub-pagina" class="muted">Libere um CT48 para um funcionário ou diarista.</p>
+      </div>
+      <div id="relogio" class="relogio"></div>
+    </header>
+
+  <main class="pagina">
+    <section data-painel="entregar">
+      <div class="resumo" aria-label="Resumo dos aparelhos">
+        <div class="stat"><span class="stat-num" id="st-livres">–</span><span class="stat-rot">Livres</span></div>
+        <div class="stat"><span class="stat-num" id="st-uso">–</span><span class="stat-rot">Em uso</span></div>
+        <div class="stat"><span class="stat-num" id="st-sinal">–</span><span class="stat-rot">Sem sinal</span></div>
+        <div class="stat"><span class="stat-num" id="st-fora">–</span><span class="stat-rot">Fora da área</span></div>
+      </div>
+      <div class="grade-entregar">
+        <div class="card card-pessoa">
+          <h2><span class="passo">1</span>Quem vai usar</h2>
+          <div class="seg" role="group" aria-label="Tipo de vínculo">
+            <button type="button" data-modo="CLT" aria-pressed="true">CLT</button>
+            <button type="button" data-modo="DIA" aria-pressed="false">Diarista</button>
+          </div>
+          <form id="f-clt">
+            <label>Matrícula
+              <span class="linha"><input id="mat" inputmode="numeric" autocomplete="off" placeholder="Número do crachá"><button class="btn">Buscar</button></span>
+            </label>
+          </form>
+          <form id="f-dia" hidden>
+            <label>CPF <input id="cpf" inputmode="numeric" maxlength="14" autocomplete="off" placeholder="000.000.000-00"></label>
+            <label>Nome completo <input id="nome-dia" autocomplete="off"></label>
+            <button class="btn">Confirmar diarista</button>
+          </form>
+          <p id="msg-pessoa" class="msg" role="status"></p>
+          <div id="pessoa" class="pessoa" hidden></div>
+          <div class="rodape-card">
+            <p id="dica-gerar" class="muted pequeno">Busque a pessoa para liberar um aparelho.</p>
+            <button id="gerar" type="button" class="btn primary" disabled>Gerar QR de liberação</button>
+          </div>
+        </div>
+        <div class="card qr-card">
+          <h2><span class="passo">2</span>QR de liberação</h2>
+          <div id="qr" class="qr vazio">
+            <svg viewBox="0 0 24 24" width="44" height="44" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.6" d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 18h2v2h-2zM14 18h2M18 14h2"/></svg>
+            <span>Escolha a pessoa e gere o QR.</span>
+          </div>
+          <div id="qr-barra" class="barra" hidden><span></span></div>
+          <p id="qr-status" class="msg" role="status"></p>
+          <button id="nova-entrega" type="button" class="btn" hidden>Nova entrega</button>
+          <p class="muted pequeno dica-qr">No CT48, a pessoa aperta a tecla de leitura e aponta para este QR. Ele vale 2 minutos e libera um aparelho só.</p>
+        </div>
+      </div>
+    </section>
+
+    <section data-painel="devolver" hidden>
+      <div class="grade-entregar">
+        <div class="card card-pessoa">
+          <h2>Devolução por QR</h2>
+          <ol class="passos-dev">
+            <li>Gere o QR de devolução.</li>
+            <li>Cada pessoa abre a tela inicial do CT48, aperta a tecla de leitura e aponta para o QR.</li>
+            <li>O aparelho se bloqueia na hora e aparece na lista ao lado.</li>
+          </ol>
+          <p class="muted pequeno">O mesmo QR serve para vários aparelhos enquanto valer (2 minutos). Bom para o fim do turno, quando todo mundo devolve junto.</p>
+          <div class="rodape-card">
+            <button id="gerar-dev" type="button" class="btn primary">Gerar QR de devolução</button>
+          </div>
+        </div>
+        <div class="card qr-card">
+          <h2>QR de devolução</h2>
+          <div id="qr-dev" class="qr vazio">
+            <svg viewBox="0 0 24 24" width="44" height="44" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="1.6" d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 18h2v2h-2zM14 18h2M18 14h2"/></svg>
+            <span>Gere o QR para receber os aparelhos.</span>
+          </div>
+          <div id="qr-dev-barra" class="barra" hidden><span></span></div>
+          <p id="qr-dev-status" class="msg" role="status"></p>
+          <ul id="devolvidos" class="devolvidos"></ul>
+        </div>
+      </div>
+    </section>
+
+    <div id="card-em-uso" class="card">
+      <div class="cab-card">
+        <h2>Em uso agora</h2>
+        <span id="uso-contagem" class="pill"></span>
+      </div>
+      <p id="msg-uso" class="msg" role="status"></p>
+      <div id="em-uso"></div>
+    </div>
+
+    <section data-painel="alertas" hidden>
+      <div class="card">
+        <div class="cab-card">
+          <div class="seg" role="group" aria-label="Quais alertas">
+            <button type="button" data-al-ver="ativos" aria-pressed="true">Ativos <b id="al-n-ativos"></b></button>
+            <button type="button" data-al-ver="resolvidos" aria-pressed="false">Resolvidos <b id="al-n-resolvidos"></b></button>
+          </div>
+          <div class="linha">
+            <button type="button" id="al-som" class="btn mini" aria-pressed="false">Som e notificação: desligados</button>
+            <button type="button" id="al-todos" class="btn mini">Resolver todos</button>
+          </div>
+        </div>
+        <p id="al-msg" class="msg" role="status"></p>
+        <div id="lista-alertas" class="lista-alertas"></div>
+      </div>
+      <p class="muted pequeno">Os alertas se resolvem sozinhos quando a situação acaba (o aparelho volta, o sinal volta). "Resolver" só tira da lista de ativos aquela ocorrência.</p>
+    </section>
+
+    <section data-painel="aparelhos" hidden>
+      <div class="card">
+        <div class="cab-card">
+          <h2>Aparelhos</h2>
+          <form id="f-aparelho" class="linha cadastrar">
+            <input id="novo-aparelho" placeholder="Novo aparelho, ex.: CT48-05" autocomplete="off" aria-label="Nome do novo aparelho">
+            <button class="btn">Cadastrar</button>
+          </form>
+        </div>
+        <p id="msg-aparelho" class="msg" role="status"></p>
+        <div class="filtros">
+          <div class="chips" role="group" aria-label="Filtrar aparelhos" id="ap-filtros">
+            <button type="button" data-filtro="todos" aria-pressed="true">Todos <b></b></button>
+            <button type="button" data-filtro="uso" aria-pressed="false">Em uso <b></b></button>
+            <button type="button" data-filtro="livre" aria-pressed="false">Livres <b></b></button>
+            <button type="button" data-filtro="sinal" aria-pressed="false">Sem sinal <b></b></button>
+            <button type="button" data-filtro="fora" aria-pressed="false">Fora da área <b></b></button>
+            <button type="button" data-filtro="manut" aria-pressed="false">Manutenção <b></b></button>
+            <button type="button" data-filtro="registro" aria-pressed="false">Sem registro <b></b></button>
+          </div>
+          <input id="ap-busca" type="search" placeholder="Buscar aparelho, pessoa, SN, área…" autocomplete="off" aria-label="Buscar aparelho">
+        </div>
+      </div>
+      <div id="grade-aparelhos" class="grade-aparelhos"></div>
+      <p class="muted pequeno">Para registrar um CT48 novo, cadastre o nome aqui e digite no app do aparelho o código que aparecer no cartão.</p>
+    </section>
+
+    <section data-painel="pessoas" hidden>
+      <div class="card">
+        <div class="cab-card">
+          <div class="filtros pes-filtros">
+            <input id="pes-busca" type="search" placeholder="Buscar nome, matrícula, CPF ou setor…" autocomplete="off" aria-label="Buscar pessoa">
+            <div class="seg" role="group" aria-label="Filtrar pessoas">
+              <button type="button" data-pes-filtro="" aria-pressed="true">Todos</button>
+              <button type="button" data-pes-filtro="uso" aria-pressed="false">Com aparelho</button>
+              <button type="button" data-pes-filtro="bloqueados" aria-pressed="false">Bloqueados</button>
+            </div>
+            <select id="pes-tipo" aria-label="Tipo de vínculo"><option value="">CLT e diaristas</option><option value="CLT">Só CLT</option><option value="DIA">Só diaristas</option></select>
+          </div>
+          <button type="button" id="pes-importar" class="btn mini">Importar base do RH</button>
+        </div>
+        <p id="pes-totais" class="muted pequeno pes-totais"></p>
+      </div>
+      <div class="grade-pessoas">
+        <div class="card pes-lista-card"><div id="pes-lista" class="pes-lista"></div></div>
+        <div class="card pes-detalhe" id="pes-detalhe"><p class="muted h-vazio">Escolha uma pessoa na lista para ver o histórico e as ações.</p></div>
+      </div>
+    </section>
+
+    <section data-painel="historico" hidden>
+      <div class="card">
+        <div class="cab-card">
+          <h2>Histórico</h2>
+          <button id="h-exportar" type="button" class="btn mini">Exportar CSV</button>
+        </div>
+        <div class="filtros">
+          <div class="seg" role="group" aria-label="Período">
+            <button type="button" data-dias="1" aria-pressed="true">Hoje</button>
+            <button type="button" data-dias="7" aria-pressed="false">7 dias</button>
+            <button type="button" data-dias="30" aria-pressed="false">30 dias</button>
+            <button type="button" data-dias="0" aria-pressed="false">Tudo</button>
+          </div>
+          <input id="h-busca" type="search" placeholder="Buscar pessoa, matrícula, aparelho…" autocomplete="off" aria-label="Buscar no histórico">
+          <select id="h-aparelho" aria-label="Filtrar por aparelho"><option value="">Todos os aparelhos</option></select>
+        </div>
+        <div class="chips" role="group" aria-label="Tipos de evento">
+          <button type="button" data-cat="entrega" aria-pressed="true">Entregas</button>
+          <button type="button" data-cat="devolucao" aria-pressed="true">Devoluções</button>
+          <button type="button" data-cat="alerta" aria-pressed="true">Alertas</button>
+          <button type="button" data-cat="qr" aria-pressed="false">QR gerados</button>
+          <button type="button" data-cat="cadastro" aria-pressed="false">Cadastros</button>
+        </div>
+      </div>
+
+      <div class="resumo" aria-label="Resumo do período">
+        <div class="stat"><span class="stat-num" id="hs-entregas">–</span><span class="stat-rot">Entregas</span></div>
+        <div class="stat"><span class="stat-num" id="hs-devolucoes">–</span><span class="stat-rot">Devoluções</span></div>
+        <div class="stat"><span class="stat-num" id="hs-alertas">–</span><span class="stat-rot">Alertas</span></div>
+        <div class="stat"><span class="stat-num" id="hs-media">–</span><span class="stat-rot">Tempo médio de uso</span></div>
+      </div>
+
+      <div class="card">
+        <p id="h-info" class="muted pequeno h-info"></p>
+        <div id="historico" class="linha-tempo"></div>
+        <button id="h-mais" type="button" class="btn h-mais" hidden>Mostrar mais</button>
+      </div>
+    </section>
+
+    <section data-painel="relatorios" hidden>
+      <div class="card nao-imprimir">
+        <div class="cab-card">
+          <div class="seg" role="group" aria-label="Período do relatório">
+            <button type="button" data-rel-dias="1" aria-pressed="false">Hoje</button>
+            <button type="button" data-rel-dias="7" aria-pressed="true">7 dias</button>
+            <button type="button" data-rel-dias="30" aria-pressed="false">30 dias</button>
+            <button type="button" data-rel-dias="90" aria-pressed="false">90 dias</button>
+          </div>
+          <div class="linha">
+            <button type="button" id="rel-csv" class="btn mini">Exportar usos (CSV)</button>
+            <button type="button" id="rel-imprimir" class="btn mini">Imprimir / PDF</button>
+          </div>
+        </div>
+      </div>
+      <p id="rel-periodo" class="muted pequeno rel-periodo"></p>
+      <div class="resumo resumo-6" id="rel-kpis"></div>
+      <div class="grade-rel">
+        <div class="card" id="rel-dia-card"><h2>Horas de uso por dia</h2><div id="rel-dia" class="grafico"></div></div>
+        <div class="card"><h2>Aparelhos em uso por hora do dia</h2><p class="muted pequeno sub-graf">Média do período. Mostra os horários de pico.</p><div id="rel-hora" class="grafico"></div></div>
+      </div>
+      <div class="grade-rel">
+        <div class="card"><h2>Uso por aparelho</h2><div id="rel-aparelhos"></div></div>
+        <div class="card"><h2>Uso por setor</h2><div id="rel-setores"></div></div>
+      </div>
+      <div class="card"><h2>Quem mais usou</h2><div id="rel-pessoas"></div></div>
+    </section>
+
+    <section data-painel="areas" hidden>
+      <div class="card">
+        <h2>Áreas Wi-Fi</h2>
+        <p class="muted">Dentro do galpão o GPS perde precisão. Cada roteador cadastrado aqui vira uma área: o aparelho conectado a ele aparece nessa área no painel.</p>
+        <form id="f-area" class="linha">
+          <input id="area-bssid" placeholder="BSSID, ex.: aa:bb:cc:dd:ee:ff" autocomplete="off" aria-label="BSSID do roteador">
+          <input id="area-nome" placeholder="Área, ex.: Recebimento" autocomplete="off" aria-label="Nome da área">
+          <button class="btn">Salvar</button>
+        </form>
+        <p id="msg-area" class="msg" role="status"></p>
+        <table>
+          <thead><tr><th>Roteador (BSSID)</th><th>Área</th><th></th></tr></thead>
+          <tbody id="tabela-areas"></tbody>
+        </table>
+      </div>
+    </section>
+    <section data-painel="config" hidden>
+      <form id="f-config" class="grade-config">
+        <div class="card">
+          <h2>Turnos</h2>
+          <p class="muted pequeno sub-graf">O nome tem que ser igual ao da coluna "turno" da base de RH. É o fim do turno que diz quando o aparelho devia ter voltado.</p>
+          <div id="cfg-turnos" class="cfg-turnos"></div>
+          <button type="button" id="cfg-add-turno" class="btn mini">Adicionar turno</button>
+        </div>
+        <div class="card">
+          <h2>Alertas</h2>
+          <div class="cfg-campos">
+            <label>Tolerância depois do fim do turno <span class="cfg-un"><input id="cfg-tolerancia" type="number" min="0" max="180" required> min</span></label>
+            <label>Tempo máximo de uso (sem turno, ex.: diarista) <span class="cfg-un"><input id="cfg-horasmax" type="number" min="1" max="24" required> horas</span></label>
+            <label>Aparelho em uso sem sinal por mais de <span class="cfg-un"><input id="cfg-semsinal" type="number" min="1" max="240" required> min</span></label>
+            <label>Bateria baixa abaixo de <span class="cfg-un"><input id="cfg-bateria" type="number" min="5" max="60" required> %</span></label>
+          </div>
+        </div>
+        <div class="card">
+          <h2>QR e aparelho</h2>
+          <div class="cfg-campos">
+            <label>Validade do QR <span class="cfg-un"><input id="cfg-validade" type="number" min="30" max="600" required> segundos</span></label>
+            <label>Apps liberados no CT48 (um pacote por linha)
+              <textarea id="cfg-apps" rows="4" placeholder="com.empresa.wms&#10;com.empresa.inventario" spellcheck="false"></textarea>
+            </label>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Cerca virtual</h2>
+          <label class="cfg-check"><input id="cfg-cerca-on" type="checkbox"> Alertar quando o aparelho sair da área da empresa (GPS)</label>
+          <div class="cfg-campos cfg-cerca" id="cfg-cerca">
+            <label>Latitude <input id="cfg-lat" inputmode="decimal" placeholder="-23.50000"></label>
+            <label>Longitude <input id="cfg-lng" inputmode="decimal" placeholder="-46.70000"></label>
+            <label>Raio <span class="cfg-un"><input id="cfg-raio" type="number" min="50" max="20000"> metros</span></label>
+          </div>
+          <button type="button" id="cfg-aqui" class="btn mini">Usar a localização deste computador</button>
+        </div>
+        <div class="cfg-salvar">
+          <p id="cfg-msg" class="msg" role="status"></p>
+          <button class="btn primary">Salvar configurações</button>
+        </div>
+      </form>
+
+      <div class="grade-config">
+        <div class="card cfg-adms">
+          <h2>ADMs</h2>
+          <div class="tabela-rolagem"><table>
+            <thead><tr><th>Nome</th><th>Login</th><th>Último acesso</th><th></th></tr></thead>
+            <tbody id="cfg-lista-adms"></tbody>
+          </table></div>
+          <p id="adm-msg" class="msg" role="status"></p>
+          <form id="f-novo-adm" class="cfg-novo-adm">
+            <h3>Novo ADM</h3>
+            <div class="cfg-campos cfg-3">
+              <label>Nome <input id="na-nome" autocomplete="off" required></label>
+              <label>Login <input id="na-login" autocomplete="off" required placeholder="ex.: maria.silva"></label>
+              <label>Senha <input id="na-senha" type="password" autocomplete="new-password" minlength="8" required></label>
+            </div>
+            <button class="btn">Criar ADM</button>
+          </form>
+        </div>
+        <div class="card">
+          <h2>Minha senha</h2>
+          <form id="f-minha-senha" class="cfg-campos">
+            <label>Senha atual <input id="ms-atual" type="password" autocomplete="current-password" required></label>
+            <label>Nova senha <input id="ms-nova" type="password" autocomplete="new-password" minlength="8" required></label>
+            <label>Repita a nova senha <input id="ms-nova2" type="password" autocomplete="new-password" minlength="8" required></label>
+            <p id="ms-msg" class="msg" role="status"></p>
+            <button class="btn">Trocar minha senha</button>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+  </div>
+</div>
+
+<dialog id="dlg-manut" class="dialogo">
+  <form method="dialog" id="f-manut">
+    <h2 id="dm-titulo">Manutenção</h2>
+    <label>Situação
+      <select id="dm-situacao">
+        <option value="manutencao">Em manutenção</option>
+        <option value="quebrado">Quebrado</option>
+        <option value="perdido">Perdido</option>
+      </select>
+    </label>
+    <label>Observação <textarea id="dm-obs" rows="3" maxlength="300" placeholder="Ex.: tela trincada, enviado para a assistência"></textarea></label>
+    <p class="muted pequeno" id="dm-aviso"></p>
+    <p id="dm-msg" class="msg err" role="alert"></p>
+    <div class="dialogo-botoes"><button type="button" class="btn ghost" data-fechar>Cancelar</button><button class="btn" id="dm-salvar">Salvar</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlg-rh" class="dialogo">
+  <form method="dialog" id="f-rh">
+    <h2>Importar base do RH</h2>
+    <p class="muted pequeno">Arquivo CSV com as colunas <code>matricula;nome;cargo;setor;turno</code>. A base atual de funcionários é substituída. Diaristas e o histórico não mudam.</p>
+    <label>Arquivo <input id="rh-arquivo" type="file" accept=".csv,text/csv"></label>
+    <div id="rh-previa"></div>
+    <p id="rh-msg" class="msg" role="status"></p>
+    <div class="dialogo-botoes"><button type="button" class="btn ghost" data-fechar>Cancelar</button><button class="btn" id="rh-confirmar" disabled>Importar</button></div>
+  </form>
+</dialog>
+
+<dialog id="dlg-senha" class="dialogo">
+  <form method="dialog" id="f-senha-adm">
+    <h2 id="ds-titulo">Trocar senha</h2>
+    <label>Nova senha <input id="ds-senha" type="password" autocomplete="new-password" minlength="8"></label>
+    <p class="muted pequeno">O ADM vai precisar entrar de novo com a senha nova.</p>
+    <p id="ds-msg" class="msg err" role="alert"></p>
+    <div class="dialogo-botoes"><button type="button" class="btn ghost" data-fechar>Cancelar</button><button class="btn">Trocar senha</button></div>
+  </form>
+</dialog>
+
+</body>
+</html>

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/fundo">
+
+    <!-- Bloqueado: ninguém vinculado ao aparelho -->
+    <LinearLayout
+        android:id="@+id/tela_bloqueio"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <TextView
+            android:id="@+id/b_aparelho"
+            style="@style/Rotulo"
+            android:layout_marginBottom="24dp" />
+
+        <ImageView
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:layout_marginBottom="16dp"
+            android:contentDescription="@null"
+            android:src="@android:drawable/ic_lock_lock"
+            android:tint="@color/texto" />
+
+        <TextView
+            android:id="@+id/b_titulo"
+            style="@style/Titulo"
+            android:text="@string/bloqueado_titulo" />
+
+        <TextView
+            android:id="@+id/b_instrucao"
+            style="@style/Texto"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:text="@string/bloqueado_instrucao" />
+
+        <TextView
+            android:id="@+id/b_msg"
+            style="@style/Texto"
+            android:layout_width="match_parent"
+            android:layout_marginTop="28dp"
+            android:background="@color/cartao"
+            android:gravity="center"
+            android:minHeight="64dp"
+            android:padding="14dp"
+            android:textColor="@color/texto"
+            android:visibility="invisible" />
+
+        <TextView
+            android:id="@+id/b_conexao"
+            style="@style/Rotulo"
+            android:layout_marginTop="28dp" />
+    </LinearLayout>
+
+    <!-- Liberado: mostra quem está com o aparelho e os apps da empresa -->
+    <LinearLayout
+        android:id="@+id/tela_liberado"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="20dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/l_aparelho"
+            style="@style/Rotulo" />
+
+        <TextView
+            android:id="@+id/l_pessoa"
+            style="@style/Titulo"
+            android:layout_marginTop="8dp" />
+
+        <TextView
+            android:id="@+id/l_detalhe"
+            style="@style/Texto"
+            android:layout_marginBottom="20dp" />
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <GridLayout
+                android:id="@+id/l_apps"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:columnCount="3" />
+        </ScrollView>
+
+        <TextView
+            android:id="@+id/l_vazio"
+            style="@style/Texto"
+            android:text="Nenhum app da empresa foi configurado no servidor."
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/l_msg"
+            style="@style/Texto"
+            android:layout_width="match_parent"
+            android:layout_marginTop="12dp"
+            android:background="@color/cartao"
+            android:gravity="center"
+            android:minHeight="56dp"
+            android:padding="12dp"
+            android:textColor="@color/texto"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/l_conexao"
+            style="@style/Rotulo"
+            android:layout_marginTop="12dp" />
+
+        <TextView
+            style="@style/Texto"
+            android:layout_marginTop="4dp"
+            android:text="@string/liberado_rodape"
+            android:textSize="14sp" />
+    </LinearLayout>
+</FrameLayout>

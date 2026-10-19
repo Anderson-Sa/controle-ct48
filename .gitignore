@@ -1,0 +1,30 @@
+# Dados reais: banco, backups e logs ficam só na máquina do servidor
+servidor/dados/
+*.db
+*.db-wal
+*.db-shm
+*.log
+
+# Configuração local (porta, cerca virtual). O modelo é servidor/config.exemplo.json
+servidor/config.json
+
+# Dependências e builds
+node_modules/
+app-ct48/.gradle/
+app-ct48/.kotlin/
+app-ct48/build/
+app-ct48/app/build/
+app-ct48/local.properties
+app-ct48/captures/
+*.apk
+*.aab
+*.keystore
+*.jks
+
+# Editores e sistema
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+*.zip

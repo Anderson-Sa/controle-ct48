@@ -1,0 +1,659 @@
+<title>Controle de CT48</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<style>
+/* Layout: painel do ADM à esquerda, "bancada" com os aparelhos à direita; empilha no celular */
+:root {
+  --bg: #FFFFFF; --surface: #FFFFFF; --fill: #F1F4F6; --ink: #15212B; --muted: #5A6A77; --line: #D3DAE0;
+  --accent: #0D6A85; --accent-ink: #FFFFFF;
+  --ok: #1D7F47; --ok-bg: #E2F3E8; --bad: #B23A2E; --bad-bg: #FBE6E3; --warn: #8C5B00; --warn-bg: #FFF2D3;
+  --qr-fg: #15212B; --qr-bg: #FFFFFF;
+  --map-ground: #E3E8EB; --map-bld: #F8FAFB; --map-line: #B7C2CA; --map-rack: #CBD4DA;
+  --dev-body: #31373D; --dev-edge: #1C2025; --dev-bezel: #090C0F; --dev-screen: #0E1921; --dev-text: #E7EFF4;
+  --dev-dim: #8FA2AF; --dev-tile: #1B2A35; --dev-ok: #45D98A; --dev-bad: #FF6E61; --scan: #F39C12; --scan-ink: #2B1A00;
+  --sticker: #D8DDE1; --sticker-ink: #1A2228; --dev-key: #23282E; --dev-key-hi: #3A4148;
+  --f-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0E151B; --surface: #172129; --fill: #0E151B; --ink: #E5ECF1; --muted: #93A3AF; --line: #293842;
+  --accent: #52B4D2; --accent-ink: #05212B;
+  --ok: #62CC8E; --ok-bg: #143020; --bad: #F18B7F; --bad-bg: #3A1B18; --warn: #F0B84E; --warn-bg: #352912;
+  --map-ground: #121C23; --map-bld: #1B2730; --map-line: #36474F; --map-rack: #2B3A44;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0E151B; --surface: #172129; --fill: #0E151B; --ink: #E5ECF1; --muted: #93A3AF; --line: #293842;
+  --accent: #52B4D2; --accent-ink: #05212B;
+  --ok: #62CC8E; --ok-bg: #143020; --bad: #F18B7F; --bad-bg: #3A1B18; --warn: #F0B84E; --warn-bg: #352912;
+  --map-ground: #121C23; --map-bld: #1B2730; --map-line: #36474F; --map-rack: #2B3A44;
+  color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--f-body); }
+.wrap { max-width: 1280px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+button { font: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.eyebrow { font: 500 11px/1.2 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.muted { color: var(--muted); }
+.small { font-size: 13px; color: var(--muted); margin: 0; }
+
+/* Topo */
+.top { padding-block: 28px 20px; }
+.top-in { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px; }
+h1 { font: 700 44px/1 var(--f-display); letter-spacing: .01em; margin: 6px 0 8px; text-wrap: balance; }
+.lede { margin: 0; max-width: 60ch; color: var(--muted); }
+.demo-note { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 13px; color: var(--muted); }
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font: 500 12px/1.4 var(--f-body); white-space: nowrap; }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pill.ok { background: var(--ok-bg); color: var(--ok); }
+.pill.bad { background: var(--bad-bg); color: var(--bad); }
+.pill.warn { background: var(--warn-bg); color: var(--warn); }
+
+/* Grade principal */
+.grid { display: grid; grid-template-columns: minmax(0, 430px) minmax(0, 1fr); gap: 28px; align-items: start; padding-block: 0 32px; }
+@media (max-width: 920px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* Painel ADM */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; min-width: 0; }
+.panel-head { padding: 14px 18px 0; display: flex; justify-content: space-between; align-items: center; }
+.tabs { display: flex; border-bottom: 1px solid var(--line); overflow-x: auto; padding: 0 8px; }
+.tabs button { flex: 1 0 auto; padding: 12px 10px; background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted); font-weight: 500; font-size: 14px; }
+.tabs button.on { color: var(--ink); border-bottom-color: var(--accent); }
+.pbody { padding: 18px; display: flex; flex-direction: column; gap: 16px; }
+.seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--fill); border-radius: 9px; padding: 3px; gap: 3px; }
+.seg button { border: 0; background: transparent; padding: 8px; border-radius: 7px; color: var(--muted); font-size: 14px; font-weight: 500; }
+.seg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.form { display: flex; flex-direction: column; gap: 8px; }
+.form label { font-size: 13px; font-weight: 600; }
+.row { display: flex; gap: 8px; }
+input { width: 100%; min-width: 0; font: 16px var(--f-mono); padding: 10px 12px; border: 1px solid var(--line); background: var(--fill); color: var(--ink); border-radius: 8px; }
+.form input + label { margin-top: 6px; }
+.btn { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 8px; padding: 10px 16px; font-weight: 600; font-size: 14px; white-space: nowrap; }
+.btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--line); padding: 6px 12px; font-size: 13px; }
+.ex { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); margin-top: 4px; }
+.chip { border: 1px dashed var(--line); background: transparent; color: var(--ink); border-radius: 999px; padding: 2px 10px; font: 12px var(--f-mono); }
+.msg { margin: 0; font-size: 13px; min-height: 0; }
+.msg:empty { display: none; }
+.msg.err { color: var(--bad); }
+.msg.okk { color: var(--ok); }
+.msg.warn { background: var(--warn-bg); color: var(--warn); padding: 8px 10px; border-radius: 8px; }
+.pcard { border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 4px; }
+.pc-name { font: 600 22px/1.15 var(--f-display); letter-spacing: .01em; }
+.pc-meta { font-size: 13px; color: var(--muted); }
+.pcard .btn { margin-top: 10px; align-self: flex-start; }
+.sub { font: 600 13px var(--f-body); margin: 6px 0 0; }
+
+/* QR */
+.qr-card { display: flex; gap: 16px; align-items: center; border: 1px solid var(--line); border-radius: 10px; padding: 14px; flex-wrap: wrap; }
+.qr-img { position: relative; width: 150px; flex: none; max-width: 100%; }
+.qr-img svg { display: block; width: 100%; height: auto; border-radius: 6px; }
+.qr-card.off .qr-img svg { opacity: .18; }
+.qr-stamp { position: absolute; inset: 0; display: grid; place-items: center; font: 700 20px var(--f-display); letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
+.qr-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1 1 160px; }
+.qr-info strong { font: 600 19px/1.2 var(--f-display); }
+.count { font-size: 13px; margin-top: 6px; font-variant-numeric: tabular-nums; }
+.count b { font-family: var(--f-mono); }
+.qr-info code { font: 11px var(--f-mono); color: var(--muted); word-break: break-all; margin-top: 4px; }
+.qr-fallback { font: 12px var(--f-mono); padding: 12px; border: 1px dashed var(--line); word-break: break-all; }
+
+/* Listas e tabela */
+.uso { display: flex; flex-direction: column; gap: 8px; }
+.uso-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; }
+.uso-row div { min-width: 0; }
+.uso-row b { display: block; font-weight: 600; }
+.uso-row span { font-size: 12px; color: var(--muted); }
+.tbl-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th { text-align: left; font: 500 11px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--line); }
+td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+td .sn { display: block; font: 11px var(--f-mono); color: var(--muted); }
+.log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.log li { display: grid; grid-template-columns: 46px 10px minmax(0,1fr); gap: 8px; align-items: baseline; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.log time { font: 12px var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); align-self: center; }
+.dot.ok { background: var(--ok); } .dot.bad { background: var(--bad); } .dot.info { background: var(--accent); }
+
+/* Bancada de aparelhos */
+.floor { min-width: 0; }
+.floor-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; }
+.floor-head h2 { font: 700 26px/1 var(--f-display); margin: 0; letter-spacing: .01em; }
+#resumo { display: flex; gap: 8px; flex-wrap: wrap; }
+.floor > .small { margin: 6px 0 18px; }
+.devices { display: grid; grid-template-columns: repeat(auto-fill, minmax(172px, 1fr)); gap: 26px 14px; }
+.dev-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; }
+.dev-cap { display: flex; gap: 8px; font: 11px var(--f-mono); color: var(--muted); }
+.dev-cap b { color: var(--ink); font-weight: 500; }
+
+/* Foto do CT48 com a tela simulada encaixada por cima (medidas tiradas da foto 495×1200) */
+.ct48 { position: relative; width: 100%; max-width: 200px; }
+.ct48-img { display: block; width: 100%; height: auto; user-select: none; filter: drop-shadow(0 14px 14px rgba(8,16,24,.35)); }
+.screen-slot { position: absolute; left: 14.75%; top: 12.33%; width: 70.5%; height: 47.5%; overflow: hidden; background: var(--dev-screen); }
+.scan-hit { position: absolute; left: 38.2%; top: 66.4%; width: 23.6%; height: 5.8%; border: 0; padding: 0; border-radius: 12px; background: transparent; }
+.scan-hit:hover:not(:disabled) { box-shadow: 0 0 0 2px var(--scan), 0 0 14px var(--scan); }
+.scan-hit:active:not(:disabled) { background: rgba(0,0,0,.25); }
+.scan-hit:disabled { cursor: wait; }
+.screen { position: absolute; left: 0; top: 0; width: 165px; height: 270px; transform-origin: 0 0; transform: scale(var(--k, 1)); background: var(--dev-screen); color: var(--dev-text); overflow: hidden; display: flex; flex-direction: column; }
+.sbar { display: flex; justify-content: space-between; padding: 4px 9px; font: 10px var(--f-mono); color: var(--dev-dim); font-variant-numeric: tabular-nums; }
+.scr { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.scr-c { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px; padding: 12px 14px; }
+.scr-c svg { width: 34px; height: 34px; }
+.scr-h { font: 700 18px/1 var(--f-display); letter-spacing: .03em; text-transform: uppercase; }
+.scr-msg { font-size: 12px; line-height: 1.4; color: var(--dev-dim); }
+.s-lock .scr-c svg { color: var(--scan); }
+.s-erro .scr-c svg, .s-erro .scr-h { color: var(--dev-bad); }
+.s-ok .scr-c svg, .s-ok .scr-h { color: var(--dev-ok); }
+.s-scan .scr-msg { color: var(--dev-text); }
+.laser { position: absolute; left: 12%; right: 12%; height: 2px; top: 34%; background: var(--dev-bad); box-shadow: 0 0 10px var(--dev-bad); animation: sweep .8s ease-in-out infinite alternate; }
+@keyframes sweep { from { top: 30%; } to { top: 62%; } }
+.on-head { padding: 8px 12px 10px; border-bottom: 1px solid var(--dev-tile); }
+.on-head .eyebrow { color: var(--dev-ok); font-size: 10px; }
+.on-name { font: 700 17px/1.1 var(--f-display); margin: 4px 0 3px; overflow-wrap: anywhere; }
+.on-meta { font: 11px var(--f-mono); color: var(--dev-dim); }
+.apps { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 8px 10px; }
+.app { background: var(--dev-tile); border-radius: 8px; padding: 6px 2px 5px; display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 9.5px; }
+.app span { width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; background: var(--dev-screen); color: var(--scan); font: 700 14px var(--f-display); }
+.on-foot { margin-top: auto; padding: 4px 8px 5px; font-size: 9.5px; color: var(--dev-dim); text-align: center; }
+.fake { background: none; border: 0; color: var(--muted); font-size: 11.5px; text-decoration: underline; text-underline-offset: 3px; padding: 0; }
+
+/* Mapa */
+.mapa { padding-block: 0 36px; }
+.mapa > .small { margin: 6px 0 0; max-width: 75ch; }
+.mapa-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 360px); gap: 20px; align-items: start; margin-top: 14px; }
+@media (max-width: 920px) { .mapa-grid { grid-template-columns: minmax(0, 1fr); } }
+.map-box { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px; overflow-x: auto; }
+.map-box svg { display: block; width: 100%; min-width: 520px; height: auto; }
+.mk { transition: transform 2.4s ease-in-out; }
+.mk .c { stroke: var(--surface); stroke-width: 2.5; }
+.mk.on .c { fill: var(--ok); } .mk.off .c { fill: var(--muted); } .mk.fora .c { fill: var(--bad); }
+.mk .ring { fill: none; stroke: var(--bad); stroke-width: 2; opacity: 0; }
+.mk.fora .ring { animation: ping 1.4s ease-out infinite; }
+@keyframes ping { from { r: 9px; opacity: .8; } to { r: 28px; opacity: 0; } }
+.mk text { font: 600 11px var(--f-mono); fill: var(--ink); }
+.z-label { font: 600 14px var(--f-display); letter-spacing: .1em; text-transform: uppercase; fill: var(--muted); }
+.z-small { font: 11px var(--f-mono); fill: var(--muted); }
+.loc { display: flex; flex-direction: column; gap: 8px; }
+.loc-row { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; font-size: 13px; }
+.loc-row.alerta { border-color: var(--bad); background: var(--bad-bg); }
+.loc-row .meta { font: 11px var(--f-mono); color: var(--muted); margin-top: 2px; overflow-wrap: anywhere; }
+
+/* Como funciona */
+.how { padding-block: 8px 48px; }
+.how h2 { font: 700 26px/1 var(--f-display); margin: 0 0 14px; }
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; list-style: none; margin: 0; padding: 0; counter-reset: s; }
+.steps li { counter-increment: s; border-top: 2px solid var(--ink); padding-top: 10px; }
+.steps li::before { content: counter(s); font: 700 30px/1 var(--f-display); color: var(--accent); display: block; margin-bottom: 4px; }
+.steps b { display: block; margin-bottom: 2px; }
+.steps p { margin: 0; color: var(--muted); font-size: 14px; }
+.prod { margin-top: 22px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; }
+.prod ul { margin: 6px 0 0; padding-left: 18px; color: var(--muted); font-size: 14px; display: grid; gap: 4px; }
+@media (max-width: 720px) { .steps { grid-template-columns: minmax(0, 1fr); } h1 { font-size: 36px; } }
+@media (prefers-reduced-motion: reduce) { .laser, .mk.fora .ring { animation: none; } .mk { transition: none; } }
+</style>
+
+<header class="top">
+  <div class="wrap top-in">
+    <div>
+      <div class="eyebrow">Protótipo · operação</div>
+      <h1>Controle de CT48</h1>
+      <p class="lede">O aparelho fica bloqueado até o ADM liberar com um QR Code. Cada liberação vincula o número de série do CT48 ao funcionário que está com ele.</p>
+    </div>
+    <div class="demo-note"><span class="pill warn">Demonstração</span> Dados fictícios <button class="btn ghost" id="tema" type="button" aria-label="Alternar tema claro e escuro">Tema escuro</button><button class="btn ghost" id="reset" type="button">Reiniciar demonstração</button></div>
+  </div>
+</header>
+
+<main class="wrap grid">
+  <section class="panel" aria-label="Painel do ADM">
+    <div class="panel-head"><span class="eyebrow">Painel do ADM</span></div>
+    <nav class="tabs" id="tabs">
+      <button type="button" data-tab="entregar">Entregar</button>
+      <button type="button" data-tab="devolver">Devolver</button>
+      <button type="button" data-tab="aparelhos">Aparelhos</button>
+      <button type="button" data-tab="historico">Histórico</button>
+    </nav>
+    <div class="pbody" id="pbody"></div>
+  </section>
+
+  <section class="floor" aria-label="Aparelhos">
+    <div class="floor-head"><h2>Aparelhos na operação</h2><div id="resumo"></div></div>
+    <p class="small">Aperte a tecla laranja do meio no aparelho para ler o QR que está aberto no painel do ADM.</p>
+    <div class="devices" id="devices"></div>
+  </section>
+</main>
+
+<section class="wrap mapa" aria-label="Localização dos aparelhos">
+  <div class="floor-head"><h2>Onde estão os aparelhos</h2><div id="resumo-mapa"></div></div>
+  <p class="small">A posição é atualizada a cada poucos segundos pelo GPS e pelo Wi-Fi do CT48. A linha tracejada é a cerca virtual: se um aparelho sair dela, o ADM recebe um alerta.</p>
+  <div class="mapa-grid"><div class="map-box" id="mapa"></div><div class="loc" id="loc"></div></div>
+</section>
+
+<section class="wrap how">
+  <h2>Como funciona</h2>
+  <ol class="steps">
+    <li><b>ADM identifica quem vai usar</b><p>CLT: digita a matrícula e o sistema busca nome, cargo e setor na base de RH. Diarista: CPF e nome, cadastrados uma vez.</p></li>
+    <li><b>Painel gera um QR de uso único</b><p>Vale 2 minutos e libera um aparelho só. O QR leva apenas um código; os dados pessoais ficam no servidor.</p></li>
+    <li><b>O CT48 lê o QR e se libera</b><p>O aparelho envia o código e o número de série. O servidor grava o vínculo e o histórico de entrega e devolução.</p></li>
+  </ol>
+  <div class="prod">
+    <b>O que muda na versão de produção</b>
+    <ul>
+      <li>O app é instalado como administrador do aparelho (Device Owner), com um reset de fábrica na instalação. Assim o funcionário não consegue sair da tela de bloqueio.</li>
+      <li>A busca por matrícula passa a consultar a base de RH real.</li>
+      <li>Dentro do galpão o GPS perde precisão. A área do aparelho vem do roteador Wi-Fi em que ele está conectado: cada roteador fica cadastrado como uma área (Recebimento, Expedição etc.).</li>
+      <li>Os funcionários precisam ser avisados de que o aparelho da empresa é localizado durante o turno (LGPD).</li>
+      <li>Servidor e painel ficam hospedados no ambiente da empresa, com login para cada ADM.</li>
+    </ul>
+  </div>
+</section>
+
+<script>
+const KEY = 'ct48-demo-v1';
+const VALIDADE = 120000;
+const BASE_RH = [
+  { mat: '10234', nome: 'Mariana Souza Lima', cargo: 'Conferente', setor: 'Recebimento', turno: '1º turno' },
+  { mat: '10871', nome: 'João Pedro Alves', cargo: 'Separador', setor: 'Expedição', turno: '1º turno' },
+  { mat: '11502', nome: 'Fernanda Ribeiro Costa', cargo: 'Líder de estoque', setor: 'Armazenagem', turno: '2º turno' },
+  { mat: '12045', nome: 'Rafael Nunes Moreira', cargo: 'Operador de empilhadeira', setor: 'Armazenagem', turno: '2º turno' },
+  { mat: '12388', nome: 'Juliana Martins Rocha', cargo: 'Inventariante', setor: 'Inventário', turno: '1º turno' },
+  { mat: '13010', nome: 'Diego Fernandes Silva', cargo: 'Separador', setor: 'Expedição', turno: '3º turno' }
+];
+const APPS = [['W', 'WMS'], ['I', 'Inventário'], ['C', 'Conferência'], ['E', 'Etiquetas']];
+const ICON = {
+  lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/><path d="M12 14.5v2.5"/></svg>',
+  ok: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m7.5 12.5 3 3 6-6.5"/></svg>',
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6M15 9l-6 6"/></svg>'
+};
+
+function seed() {
+  const now = Date.now(), t2 = now - (2 * 60 + 14) * 60000, t4 = now - 47 * 60000;
+  return {
+    devices: [
+      { id: 'CT48-01', sn: 'UR24A80117', userKey: null, desde: null },
+      { id: 'CT48-02', sn: 'UR24A80123', userKey: 'CLT:10234', desde: t2 },
+      { id: 'CT48-03', sn: 'UR24A80158', userKey: null, desde: null },
+      { id: 'CT48-04', sn: 'UR24A80162', userKey: 'DIA:52998224725', desde: t4 }
+    ],
+    diaristas: [{ cpf: '52998224725', nome: 'Carlos Henrique Dias' }],
+    tokens: {}, qr: null,
+    log: [
+      { t: t4, tipo: 'ok', msg: 'CT48-04 (SN UR24A80162) entregue para Carlos Henrique Dias, diarista, CPF ***.982.247-**' },
+      { t: t2, tipo: 'ok', msg: 'CT48-02 (SN UR24A80123) entregue para Mariana Souza Lima, matr. 10234' }
+    ]
+  };
+}
+function load() { try { const r = localStorage.getItem(KEY); if (r) return JSON.parse(r); } catch (e) {} return seed(); }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+
+let S = load();
+let tab = 'entregar', modo = 'CLT', pessoaSel = 'CLT:10871';
+const ui = {};
+let qrEstado = '';
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const hora = t => new Date(t).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+const so = s => s.replace(/\D/g, '');
+function dur(ms) { const m = Math.max(0, Math.floor(ms / 60000)), h = Math.floor(m / 60); return h ? `${h}h${String(m % 60).padStart(2, '0')}` : `${m} min`; }
+function cpfFmt(c) { c = so(c).slice(0, 11); return c.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2'); }
+function cpfMask(c) { return `***.${c.slice(3, 6)}.${c.slice(6, 9)}-**`; }
+function cpfValido(c) {
+  c = so(c); if (c.length !== 11 || /^(\d)\1+$/.test(c)) return false;
+  for (let t = 9; t < 11; t++) { let s = 0; for (let i = 0; i < t; i++) s += +c[i] * (t + 1 - i); if ((s * 10) % 11 % 10 !== +c[t]) return false; }
+  return true;
+}
+function rand(n) { const a = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', b = new Uint32Array(n); crypto.getRandomValues(b); return Array.from(b, x => a[x % a.length]).join(''); }
+
+function pessoa(key) {
+  if (!key) return null;
+  const [t, id] = key.split(':');
+  if (t === 'CLT') { const p = BASE_RH.find(x => x.mat === id); return p && { tipo: 'CLT', nome: p.nome, ident: 'Matr. ' + p.mat, det: `${p.cargo} · ${p.setor} · ${p.turno}`, log: `${p.nome}, matr. ${p.mat}` }; }
+  const d = S.diaristas.find(x => x.cpf === id);
+  return d && { tipo: 'DIA', nome: d.nome, ident: 'CPF ' + cpfMask(d.cpf), det: 'Diarista', log: `${d.nome}, diarista, CPF ${cpfMask(d.cpf)}` };
+}
+function addLog(tipo, msg) { S.log.unshift({ t: Date.now(), tipo, msg }); if (S.log.length > 200) S.log.length = 200; }
+
+/* ---- "Servidor" simulado ---- */
+function gerarQR(tipo, userKey) {
+  const token = rand(10);
+  S.tokens[token] = { tipo, userKey: userKey || null, exp: Date.now() + VALIDADE, usos: [] };
+  S.qr = token;
+  addLog('info', tipo === 'LIB' ? `QR de liberação gerado para ${pessoa(userKey).log}` : 'QR de devolução gerado');
+  save(); renderQR();
+}
+const qrTexto = token => `PDA|${S.tokens[token].tipo}|${token}`;
+
+function validar(conteudo, devId) {
+  const d = S.devices.find(x => x.id === devId);
+  const m = /^PDA\|(LIB|DEV)\|([A-Z0-9]+)$/.exec(conteudo || '');
+  const tk = m && S.tokens[m[2]];
+  if (!tk || tk.tipo !== m[1]) { addLog('bad', `${devId}: QR recusado, não foi gerado pelo sistema`); return { ok: false, msg: 'QR inválido. Este código não foi gerado pelo sistema.' }; }
+  if (Date.now() > tk.exp) return { ok: false, msg: 'QR expirado. Peça ao ADM um QR novo.' };
+  if (tk.tipo === 'LIB') {
+    if (tk.usos.length) return { ok: false, msg: `Este QR já liberou o ${tk.usos[0].dev}. Cada QR libera um aparelho só.` };
+    if (d.userKey) return { ok: false, msg: `Aparelho em uso por ${pessoa(d.userKey).nome}. Faça a devolução primeiro.` };
+    const outro = S.devices.find(x => x.userKey === tk.userKey);
+    if (outro) return { ok: false, msg: `${pessoa(tk.userKey).nome} já está com o ${outro.id}.` };
+    d.userKey = tk.userKey; d.desde = Date.now(); tk.usos.push({ dev: devId, t: Date.now() });
+    addLog('ok', `${devId} (SN ${d.sn}) entregue para ${pessoa(d.userKey).log}`);
+    save(); return { ok: true, msg: 'Liberado' };
+  }
+  if (!d.userKey) return { ok: false, msg: 'Este aparelho já está bloqueado.' };
+  const p = pessoa(d.userKey);
+  addLog('info', `${devId} devolvido por ${p.nome} após ${dur(Date.now() - d.desde)} de uso`);
+  d.userKey = null; d.desde = null; tk.usos.push({ dev: devId, t: Date.now() });
+  save(); return { ok: true, msg: 'Devolvido', icon: 'lock' };
+}
+
+/* ---- Aparelho ---- */
+function mostrar(devId, estado, ms) { ui[devId] = { ...estado, busy: true }; renderDevices(); setTimeout(() => { delete ui[devId]; renderDevices(); }, ms); }
+function scan(devId, falso) {
+  if (ui[devId] && ui[devId].busy) return;
+  const conteudo = falso ? 'MATRICULA:10871' : (S.qr ? qrTexto(S.qr) : null);
+  if (!conteudo) { mostrar(devId, { mode: 'erro', msg: 'Nada para ler. Gere um QR no painel do ADM.' }, 3000); return; }
+  ui[devId] = { mode: 'scan', msg: 'Lendo código…', busy: true }; renderDevices();
+  setTimeout(() => { if (ui[devId]) { ui[devId].msg = 'Validando no servidor…'; renderDevices(); } }, 650);
+  setTimeout(() => {
+    const r = validar(conteudo, devId);
+    mostrar(devId, { mode: r.ok ? 'ok' : 'erro', msg: r.msg, icon: r.icon }, r.ok ? 1400 : 3800);
+    renderAll();
+  }, 1400);
+}
+function bloquearRemoto(devId) {
+  const d = S.devices.find(x => x.id === devId); if (!d.userKey) return;
+  addLog('info', `${devId} bloqueado remotamente pelo ADM. Estava com ${pessoa(d.userKey).nome} há ${dur(Date.now() - d.desde)}`);
+  d.userKey = null; d.desde = null; save();
+  mostrar(devId, { mode: 'ok', msg: 'Bloqueado pelo ADM', icon: 'lock' }, 1800);
+  renderAll();
+}
+
+function devHTML(d) {
+  const u = ui[d.id], p = pessoa(d.userKey);
+  let cls, body;
+  if (u && u.mode === 'scan') { cls = 's-scan'; body = `<div class="laser"></div><div class="scr-c"><div class="scr-msg">${u.msg}</div></div>`; }
+  else if (u && u.mode === 'erro') { cls = 's-erro'; body = `<div class="scr-c">${ICON.x}<div class="scr-h">Recusado</div><div class="scr-msg">${esc(u.msg)}</div></div>`; }
+  else if (u && u.mode === 'ok') { cls = 's-ok'; body = `<div class="scr-c">${u.icon === 'lock' ? ICON.lock : ICON.ok}<div class="scr-h">${esc(u.msg)}</div></div>`; }
+  else if (p) {
+    cls = 's-on';
+    body = `<div class="on-head"><div class="eyebrow">Liberado para</div><div class="on-name">${esc(p.nome)}</div><div class="on-meta">${esc(p.ident)}</div><div class="on-meta">desde ${hora(d.desde)}</div></div>
+      <div class="apps">${APPS.map(a => `<div class="app"><span>${a[0]}</span>${a[1]}</div>`).join('')}</div>
+      <div class="on-foot">Devolução: QR do ADM</div>`;
+  } else { cls = 's-lock'; body = `<div class="scr-c">${ICON.lock}<div class="scr-h">Bloqueado</div><div class="scr-msg">Peça ao ADM o QR de liberação e aperte a tecla laranja.</div></div>`; }
+  const busy = u && u.busy ? 'disabled' : '';
+  return `<div class="dev-wrap"><article class="ct48" aria-label="${d.id}">
+    <img class="ct48-img" src="ct48-device.png" alt="" draggable="false">
+    <div class="screen-slot"><div class="screen ${cls}"><div class="sbar"><span class="clk">${hora(Date.now())}</span><span>Wi-Fi · 86%</span></div><div class="scr">${body}</div></div></div>
+    <button type="button" class="scan-hit" data-scan="${d.id}" aria-label="Tecla de leitura do ${d.id}" title="Ler QR" ${busy}></button>
+  </article>
+  <div class="dev-cap"><b>${d.id}</b><span>SN ${d.sn}</span></div>
+  <button type="button" class="fake" data-fake="${d.id}" ${busy}>Testar QR falsificado</button></div>`;
+}
+function ajustarTelas() {
+  const slot = document.querySelector('.screen-slot');
+  if (slot && slot.clientWidth) $('#devices').style.setProperty('--k', (slot.clientWidth / 165).toFixed(4));
+}
+window.addEventListener('resize', ajustarTelas);
+function renderDevices() {
+  $('#devices').innerHTML = S.devices.map(devHTML).join('');
+  ajustarTelas();
+  const uso = S.devices.filter(d => d.userKey).length;
+  $('#resumo').innerHTML = `<span class="pill ok">${uso} em uso</span><span class="pill bad">${S.devices.length - uso} bloqueado${S.devices.length - uso === 1 ? '' : 's'}</span>`;
+}
+
+/* ---- Painel ---- */
+function qrSvg(text) {
+  if (typeof qrcode !== 'function') return `<div class="qr-fallback">${esc(text)}</div>`;
+  const q = qrcode(0, 'M'); q.addData(text); q.make();
+  const n = q.getModuleCount(), w = n + 8; let d = '';
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) d += `M${c + 4} ${r + 4}h1v1h-1z`;
+  return `<svg viewBox="0 0 ${w} ${w}" role="img" aria-label="QR Code" shape-rendering="crispEdges"><rect width="${w}" height="${w}" style="fill:var(--qr-bg)"/><path d="${d}" style="fill:var(--qr-fg)"/></svg>`;
+}
+function estadoQR(tk) {
+  if (tk.tipo === 'LIB' && tk.usos.length) return 'usado';
+  return Date.now() > tk.exp ? 'expirado' : 'ativo';
+}
+function renderQR() {
+  const el = $('#qrSlot'); if (!el) return;
+  const tk = S.qr && S.tokens[S.qr];
+  const tipo = tab === 'entregar' ? 'LIB' : 'DEV';
+  if (!tk || tk.tipo !== tipo) { el.innerHTML = ''; qrEstado = ''; return; }
+  const est = estadoQR(tk); qrEstado = S.qr + est + tk.usos.length;
+  const p = pessoa(tk.userKey);
+  const resta = Math.max(0, tk.exp - Date.now()), mmss = `${Math.floor(resta / 60000)}:${String(Math.floor(resta / 1000) % 60).padStart(2, '0')}`;
+  let status;
+  if (est === 'ativo') status = `Válido por <b data-left>${mmss}</b>${tipo === 'DEV' && tk.usos.length ? ` · ${tk.usos.length} devolvido${tk.usos.length > 1 ? 's' : ''}: ${tk.usos.map(u => u.dev).join(', ')}` : ''}`;
+  else if (est === 'usado') status = `<span class="pill ok">Usado no ${tk.usos[0].dev} às ${hora(tk.usos[0].t)}</span>`;
+  else status = `Expirou às ${hora(tk.exp)}. <button type="button" class="btn ghost" data-gerar="${tipo}" data-key="${tk.userKey || ''}">Gerar outro</button>`;
+  el.innerHTML = `<div class="qr-card ${est === 'ativo' ? '' : 'off'}">
+      <div class="qr-img">${qrSvg(qrTexto(S.qr))}${est !== 'ativo' ? `<span class="qr-stamp">${est}</span>` : ''}</div>
+      <div class="qr-info">
+        <div class="eyebrow">${tipo === 'LIB' ? 'QR de liberação' : 'QR de devolução'}</div>
+        ${tipo === 'LIB' ? `<strong>${esc(p.nome)}</strong><span class="muted">${esc(p.ident)}</span>` : `<strong>Bloqueia o aparelho lido</strong><span class="muted">Encerra o vínculo com o funcionário</span>`}
+        <div class="count">${status}</div>
+        <code>Conteúdo do QR: ${qrTexto(S.qr)}</code>
+      </div>
+    </div>
+    <p class="small">${tipo === 'LIB' ? 'Agora aperte SCAN no aparelho que vai entregar. ' : ''}O QR leva só um código de uso único. Nome, matrícula e CPF ficam no servidor.</p>`;
+}
+function renderPessoa() {
+  const el = $('#pessoa'); if (!el) return;
+  const p = pessoa(pessoaSel); if (!p) { el.innerHTML = ''; return; }
+  const dev = S.devices.find(d => d.userKey === pessoaSel);
+  el.innerHTML = `<div class="pcard">
+    <div class="eyebrow">${p.tipo === 'CLT' ? 'Encontrado na base de RH' : 'Cadastro de diaristas'}</div>
+    <div class="pc-name">${esc(p.nome)}</div>
+    <div class="pc-meta">${esc(p.ident)} · ${esc(p.det)}</div>
+    ${dev ? `<p class="msg warn">Já está com o ${dev.id} desde ${hora(dev.desde)}. Faça a devolução antes de entregar outro.</p>`
+          : `<button type="button" class="btn" data-gerar="LIB" data-key="${esc(pessoaSel)}">Gerar QR de liberação</button>`}
+  </div>`;
+}
+function renderUso() {
+  const el = $('#emuso'); if (!el) return;
+  const uso = S.devices.filter(d => d.userKey);
+  el.innerHTML = uso.length ? `<div class="uso">${uso.map(d => { const p = pessoa(d.userKey); return `<div class="uso-row"><div><b>${esc(p.nome)}</b><span>${d.id} · desde ${hora(d.desde)} · ${dur(Date.now() - d.desde)}</span></div><button type="button" class="btn ghost" data-remoto="${d.id}">Bloquear remoto</button></div>`; }).join('')}</div>`
+    : '<p class="small">Nenhum aparelho em uso.</p>';
+}
+function renderTabela() {
+  const el = $('#tabela'); if (!el) return;
+  el.innerHTML = S.devices.map(d => { const p = pessoa(d.userKey); return `<tr>
+    <td><b>${d.id}</b><span class="sn">SN ${d.sn}</span></td>
+    <td>${p ? '<span class="pill ok">Em uso</span>' : '<span class="pill bad">Bloqueado</span>'}</td>
+    <td>${p ? `${esc(p.nome)}<span class="sn">${esc(p.ident)}</span>` : '<span class="muted">—</span>'}</td>
+    <td>${p ? `${hora(d.desde)}<span class="sn">${dur(Date.now() - d.desde)}</span>` : '<span class="muted">—</span>'}</td>
+    <td>${p ? `<button type="button" class="btn ghost" data-remoto="${d.id}">Bloquear</button>` : ''}</td></tr>`; }).join('');
+}
+function renderLog() {
+  const el = $('#log'); if (!el) return;
+  el.innerHTML = S.log.map(l => `<li><time>${hora(l.t)}</time><span class="dot ${l.tipo}"></span><span>${esc(l.msg)}</span></li>`).join('') || '<li><span></span><span></span><span class="muted">Sem registros.</span></li>';
+}
+
+function renderTab() {
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  const pb = $('#pbody');
+  if (tab === 'entregar') {
+    pb.innerHTML = `<div class="seg">${[['CLT', 'CLT · matrícula'], ['DIA', 'Diarista · CPF']].map(([m, l]) => `<button type="button" data-modo="${m}" class="${modo === m ? 'on' : ''}">${l}</button>`).join('')}</div>
+      ${modo === 'CLT' ? `<form id="f-clt" class="form" autocomplete="off">
+          <label for="mat">Matrícula</label>
+          <div class="row"><input id="mat" inputmode="numeric" maxlength="8" placeholder="Ex.: 10871" value="${pessoaSel && pessoaSel.startsWith('CLT:') ? pessoaSel.slice(4) : ''}"><button class="btn">Buscar</button></div>
+          <div class="ex"><span>Na base de teste:</span>${BASE_RH.map(p => `<button type="button" class="chip" data-ex="${p.mat}">${p.mat}</button>`).join('')}</div>
+          <p id="msg" class="msg" role="status"></p></form>`
+        : `<form id="f-dia" class="form" autocomplete="off">
+          <label for="cpf">CPF</label><input id="cpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00">
+          <label for="nome">Nome completo</label><input id="nome" placeholder="Nome do diarista" style="font-family:var(--f-body)">
+          <div><button class="btn">Continuar</button></div>
+          <div class="ex"><span>Teste:</span><button type="button" class="chip" data-excpf="52998224725">529.982.247-25 · cadastrado</button><button type="button" class="chip" data-excpf="11144477735">111.444.777-35 · novo</button></div>
+          <p id="msg" class="msg" role="status"></p></form>`}
+      <div id="pessoa"></div><div id="qrSlot"></div>`;
+    ligarForms();
+  } else if (tab === 'devolver') {
+    pb.innerHTML = `<p class="small" style="color:var(--ink)">No fim do turno, ou quando o funcionário entregar o aparelho, gere o QR de devolução e aperte SCAN no aparelho. O mesmo QR bloqueia vários aparelhos durante 2 minutos.</p>
+      <div><button type="button" class="btn" data-gerar="DEV">Gerar QR de devolução</button></div>
+      <div id="qrSlot"></div><h3 class="sub">Em uso agora</h3><div id="emuso"></div>`;
+  } else if (tab === 'aparelhos') {
+    pb.innerHTML = `<div class="tbl-wrap"><table><thead><tr><th>Aparelho</th><th>Situação</th><th>Com quem</th><th>Desde</th><th></th></tr></thead><tbody id="tabela"></tbody></table></div>
+      <p class="small">O número de série é lido do próprio aparelho na hora da liberação.</p>`;
+  } else {
+    pb.innerHTML = '<ol class="log" id="log"></ol>';
+  }
+  renderPessoa(); renderQR(); renderUso(); renderTabela(); renderLog();
+}
+function renderAll() { renderDevices(); renderPessoa(); renderQR(); renderUso(); renderTabela(); renderLog(); updateMapa(); }
+
+/* ---- Localização (simulada) ---- */
+const ZONAS = { Recebimento: { x: 70, y: 70, w: 120, h: 270 }, Armazenagem: { x: 215, y: 70, w: 250, h: 270 }, 'Expedição': { x: 490, y: 70, w: 120, h: 270 }, Base: { x: 655, y: 80, w: 90, h: 70 } };
+const ZNOME = { Base: 'Sala do ADM, carregando', Fora: 'Fora da área da empresa' };
+const pos = {};
+let locSig = '';
+function zonaDe(d) {
+  if (d.fora) return 'Fora';
+  if (!d.userKey) return 'Base';
+  const [t, id] = d.userKey.split(':');
+  if (t !== 'CLT') return 'Expedição';
+  const s = BASE_RH.find(x => x.mat === id).setor;
+  return s === 'Inventário' ? 'Armazenagem' : s;
+}
+function novoPonto(i, z) {
+  if (z === 'Base') return { x: 678 + (i % 2) * 44, y: 104 + Math.floor(i / 2) * 32 };
+  if (z === 'Fora') return { x: 815, y: 150 + i * 60 };
+  const r = ZONAS[z], m = 16;
+  return { x: r.x + m + Math.random() * (r.w - 2 * m), y: r.y + m + Math.random() * (r.h - 2 * m) };
+}
+function posicionar(andar) {
+  S.devices.forEach((d, i) => {
+    const z = zonaDe(d), p = pos[d.id];
+    if (!p || p.z !== z || (andar && ZONAS[z] && z !== 'Base')) pos[d.id] = { ...novoPonto(i, z), z, prec: 4 + Math.round(Math.random() * 8), t: Date.now() };
+    else p.t = Date.now();
+  });
+}
+const coord = p => `${(-23.5 - p.y * 0.0000045).toFixed(5)}, ${(-46.7 + p.x * 0.0000055).toFixed(5)}`;
+const metaLoc = id => { const p = pos[id]; return `${ZNOME[p.z] || p.z} · ${coord(p)} · ±${p.prec} m`; };
+function mapaSVG() {
+  let racks = '', docas = '';
+  for (let i = 0; i < 6; i++) racks += `<rect x="${232 + i * 40}" y="88" width="14" height="236" rx="2" style="fill:var(--map-rack)"/>`;
+  for (let i = 0; i < 5; i++) docas += `<rect x="52" y="${88 + i * 52}" width="8" height="30" style="fill:var(--map-line)"/><rect x="620" y="${88 + i * 52}" width="8" height="30" style="fill:var(--map-line)"/>`;
+  const lbl = (x, y, t) => `<text x="${x}" y="${y}" text-anchor="middle" class="z-label">${t}</text>`;
+  return `<svg viewBox="0 0 860 470" role="img" aria-label="Mapa do galpão com a posição dos aparelhos">
+    <rect x="20" y="20" width="750" height="430" rx="14" style="fill:var(--map-ground);stroke:var(--accent);stroke-width:2;stroke-dasharray:8 6"/>
+    <text x="34" y="42" class="z-small">Cerca virtual · área da empresa</text>
+    <text x="815" y="128" text-anchor="middle" class="z-small">Fora</text>
+    <rect x="60" y="60" width="560" height="290" style="fill:var(--map-bld);stroke:var(--map-line);stroke-width:2"/>
+    <path d="M205 60V350M480 60V350" style="stroke:var(--map-line);stroke-width:1.5;stroke-dasharray:4 4"/>
+    ${racks}${docas}
+    ${lbl(132, 338, 'Recebimento')}${lbl(342, 338, 'Armazenagem')}${lbl(550, 338, 'Expedição')}
+    <rect x="640" y="60" width="120" height="110" rx="4" style="fill:var(--map-bld);stroke:var(--map-line);stroke-width:2"/>
+    ${lbl(700, 162, 'Sala do ADM')}
+    ${lbl(340, 405, 'Pátio')}
+    <rect x="680" y="392" width="76" height="44" rx="4" style="fill:var(--map-bld);stroke:var(--map-line);stroke-width:2"/>
+    <text x="718" y="419" text-anchor="middle" class="z-small">Portaria</text>
+    ${S.devices.map(d => `<g class="mk off" id="mk-${d.id}"><circle class="ring" r="9"/><circle class="c" r="9"/><text y="-14" text-anchor="middle">${d.id.slice(-2)}</text></g>`).join('')}
+  </svg>`;
+}
+function updateMapa() {
+  if (!$('#mapa').firstChild) return;
+  posicionar(false);
+  S.devices.forEach(d => {
+    const g = document.getElementById('mk-' + d.id), p = pos[d.id];
+    g.style.transform = `translate(${p.x.toFixed(1)}px, ${p.y.toFixed(1)}px)`;
+    g.setAttribute('class', 'mk ' + (d.fora ? 'fora' : d.userKey ? 'on' : 'off'));
+  });
+  const fora = S.devices.filter(d => d.fora).length;
+  $('#resumo-mapa').innerHTML = fora ? `<span class="pill bad">${fora} fora da área</span>` : '<span class="pill ok">Todos dentro da área</span>';
+  const sig = S.devices.map(d => d.id + d.userKey + !!d.fora).join('|');
+  if (sig !== locSig) {
+    locSig = sig;
+    $('#loc').innerHTML = S.devices.map(d => { const pe = pessoa(d.userKey); return `<div class="loc-row ${d.fora ? 'alerta' : ''}">
+      <span class="dot ${d.fora ? 'bad' : d.userKey ? 'ok' : ''}"></span>
+      <div><b>${d.id}</b> <span class="muted">· ${pe ? esc(pe.nome) : 'Bloqueado'}</span><div class="meta"><span data-meta="${d.id}"></span> · <span data-age="${d.id}">agora</span></div></div>
+      <button type="button" class="btn ghost" data-fora="${d.id}">${d.fora ? 'Trazer de volta' : 'Simular saída'}</button></div>`; }).join('');
+  }
+  document.querySelectorAll('[data-meta]').forEach(s => { s.textContent = metaLoc(s.dataset.meta); });
+}
+function toggleFora(id) {
+  const d = S.devices.find(x => x.id === id);
+  d.fora = !d.fora;
+  const quem = d.userKey ? ` (com ${pessoa(d.userKey).nome})` : '';
+  addLog(d.fora ? 'bad' : 'info', d.fora ? `Alerta: ${id}${quem} saiu da área da empresa` : `${id} voltou para a área da empresa`);
+  save(); updateMapa();
+}
+
+function setMsg(txt, cls) { const m = $('#msg'); if (m) { m.textContent = txt; m.className = 'msg ' + (cls || ''); } }
+function buscarMat(v) {
+  const mat = so(v); const p = BASE_RH.find(x => x.mat === mat);
+  if (!mat) { setMsg('Digite a matrícula do crachá.', 'err'); return; }
+  if (!p) { pessoaSel = null; setMsg(`Matrícula ${mat} não encontrada na base de RH. Confira o número no crachá.`, 'err'); }
+  else { pessoaSel = 'CLT:' + mat; setMsg(''); }
+  renderPessoa();
+}
+function checarCpf() {
+  const c = so($('#cpf').value);
+  if (c.length < 11) { setMsg(''); return; }
+  if (!cpfValido(c)) { setMsg('CPF inválido. Confira os números.', 'err'); return; }
+  const d = S.diaristas.find(x => x.cpf === c);
+  if (d) { $('#nome').value = d.nome; setMsg('Diarista já cadastrado.', 'okk'); }
+  else setMsg('CPF novo. Preencha o nome para cadastrar.', '');
+}
+function ligarForms() {
+  const fc = $('#f-clt');
+  if (fc) fc.addEventListener('submit', e => { e.preventDefault(); buscarMat($('#mat').value); });
+  const fd = $('#f-dia');
+  if (fd) {
+    $('#cpf').addEventListener('input', e => { e.target.value = cpfFmt(e.target.value); checarCpf(); });
+    fd.addEventListener('submit', e => {
+      e.preventDefault();
+      const c = so($('#cpf').value), nome = $('#nome').value.trim().replace(/\s+/g, ' ');
+      if (!cpfValido(c)) { setMsg('CPF inválido. Confira os números.', 'err'); return; }
+      if (nome.split(' ').length < 2) { setMsg('Digite nome e sobrenome do diarista.', 'err'); return; }
+      const d = S.diaristas.find(x => x.cpf === c);
+      if (!d) { S.diaristas.push({ cpf: c, nome }); addLog('info', `Diarista cadastrado: ${nome}, CPF ${cpfMask(c)}`); save(); renderLog(); setMsg('Diarista cadastrado.', 'okk'); }
+      pessoaSel = 'DIA:' + c; renderPessoa();
+    });
+  }
+}
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const ds = b.dataset;
+  if (ds.tab) { tab = ds.tab; renderTab(); }
+  else if (ds.modo) { modo = ds.modo; pessoaSel = null; renderTab(); }
+  else if (ds.ex) { $('#mat').value = ds.ex; buscarMat(ds.ex); }
+  else if (ds.excpf) { $('#cpf').value = cpfFmt(ds.excpf); $('#nome').value = ''; checarCpf(); }
+  else if (ds.gerar) gerarQR(ds.gerar, ds.key || null);
+  else if (ds.scan) scan(ds.scan, false);
+  else if (ds.fake) scan(ds.fake, true);
+  else if (ds.remoto) bloquearRemoto(ds.remoto);
+  else if (ds.fora) toggleFora(ds.fora);
+  else if (b.id === 'reset') { S = seed(); for (const k in ui) delete ui[k]; modo = 'CLT'; pessoaSel = 'CLT:10871'; tab = 'entregar'; save(); renderTab(); renderAll(); }
+  if (ds.gerar || ds.scan || ds.fake || ds.remoto || ds.fora) renderLog();
+});
+
+setInterval(() => {
+  const h = hora(Date.now());
+  document.querySelectorAll('.clk').forEach(c => { c.textContent = h; });
+  document.querySelectorAll('[data-age]').forEach(s => { const p = pos[s.dataset.age]; if (p) s.textContent = `há ${Math.round((Date.now() - p.t) / 1000)} s`; });
+  const tk = S.qr && S.tokens[S.qr];
+  if (tk && $('#qrSlot')) {
+    if (S.qr + estadoQR(tk) + tk.usos.length !== qrEstado) renderQR();
+    const left = document.querySelector('[data-left]');
+    if (left) { const r = Math.max(0, tk.exp - Date.now()); left.textContent = `${Math.floor(r / 60000)}:${String(Math.floor(r / 1000) % 60).padStart(2, '0')}`; }
+  }
+}, 1000);
+
+/* ---- Tema claro / escuro ---- */
+const TEMA_KEY = 'ct48-tema';
+const temaAtual = () => document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+function aplicarTema(t) {
+  if (t) document.documentElement.dataset.theme = t;
+  $('#tema').textContent = temaAtual() === 'dark' ? '☀ Tema claro' : '☾ Tema escuro';
+}
+try { aplicarTema(localStorage.getItem(TEMA_KEY)); } catch (e) { aplicarTema(null); }
+$('#tema').addEventListener('click', () => {
+  const t = temaAtual() === 'dark' ? 'light' : 'dark';
+  aplicarTema(t);
+  try { localStorage.setItem(TEMA_KEY, t); } catch (e) {}
+});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => aplicarTema(null));
+$('#mapa').innerHTML = mapaSVG();
+renderTab(); renderAll();
+setInterval(() => { posicionar(true); updateMapa(); }, 4000);
+</script>

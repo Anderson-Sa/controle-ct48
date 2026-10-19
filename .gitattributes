@@ -1,0 +1,6 @@
+# Quebra de linha padrão (LF) no repositório, qualquer que seja o sistema
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jar binary

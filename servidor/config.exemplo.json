@@ -1,0 +1,8 @@
+{
+  "porta": 3000,
+  "validadeQrSegundos": 120,
+  "intervaloEstadoSegundos": 10,
+  "intervaloPosicaoSegundos": 30,
+  "cerca": { "lat": -23.50000, "lng": -46.70000, "raioMetros": 400 },
+  "appsPermitidos": ["com.empresa.wms", "com.empresa.inventario"]
+}

@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulador de CT48</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/simulador/simulador.css">
+<script src="/simulador/simulador.js" defer></script>
+</head>
+<body>
+<main class="pagina">
+  <header class="topo">
+    <div>
+      <div class="eyebrow">Só para testes</div>
+      <h1>Simulador de CT48</h1>
+      <p class="muted">Faz o papel do app no aparelho: registra, lê o QR aberto no painel do ADM e fica bloqueado ou liberado conforme o servidor.</p>
+    </div>
+    <a class="link-painel" href="/" target="_blank" rel="noopener">Abrir painel do ADM ↗</a>
+  </header>
+
+  <div class="layout">
+    <section class="bancada" aria-label="Aparelho">
+      <div class="palco">
+        <article class="ct48" aria-label="CT48 simulado">
+          <img class="ct48-img" src="/img/ct48.png" alt="" draggable="false">
+          <div class="screen-slot"><div class="screen" id="screen"></div></div>
+          <button type="button" class="scan-hit" id="ler" aria-label="Tecla de leitura" title="Ler QR (Espaço)"></button>
+        </article>
+      </div>
+      <div class="dev-cap" id="cap"></div>
+      <p class="dica">Clique na tecla laranja do aparelho ou aperte <kbd>Espaço</kbd> para ler o QR aberto no painel.</p>
+    </section>
+
+    <aside class="controles">
+      <div class="cartao estado">
+        <div class="est-cab">
+          <span class="est-ponto" id="st-ponto"></span>
+          <div><div class="eyebrow">Estado do aparelho</div><b id="st-titulo">Conectando…</b></div>
+        </div>
+        <dl class="est-dados">
+          <div><dt>Aparelho</dt><dd id="st-nome">—</dd></div>
+          <div><dt>Conexão</dt><dd id="st-conexao">—</dd></div>
+          <div><dt>Com quem</dt><dd id="st-pessoa">—</dd></div>
+          <div><dt>Desde</dt><dd id="st-desde">—</dd></div>
+          <div><dt>Bateria</dt><dd id="st-bateria">—</dd></div>
+        </dl>
+        <button type="button" class="btn-scan" id="ler2">
+          <span class="btn-scan-luz" aria-hidden="true"></span>
+          <span id="ler2-texto">Apertar tecla de leitura</span>
+          <kbd>Espaço</kbd>
+        </button>
+      </div>
+
+      <div class="cartao">
+        <h2>Testes</h2>
+        <div class="grupo">
+          <div class="grupo-rot">Leitura</div>
+          <div class="botoes">
+            <button type="button" id="falso">QR falsificado</button>
+          </div>
+          <form id="f-manual" class="manual">
+            <input id="manual" placeholder="Conteúdo do QR, ex.: PDA|LIB|ABCDEFGH23" autocomplete="off" aria-label="Conteúdo do QR para ler">
+            <button>Ler</button>
+          </form>
+        </div>
+        <div class="grupo">
+          <div class="grupo-rot">Localização</div>
+          <div class="botoes">
+            <button type="button" id="mover-dentro">Dentro da área (Wi-Fi)</button>
+            <button type="button" id="mover-fora">Saiu da cerca (GPS)</button>
+          </div>
+          <p class="muted pequeno">Para "dentro da área" mostrar um nome, cadastre o roteador <code>aa:bb:cc:dd:ee:01</code> na aba Áreas Wi-Fi do painel.</p>
+        </div>
+        <div class="grupo">
+          <div class="grupo-rot">Bateria</div>
+          <div class="botoes">
+            <button type="button" id="bateria-baixa">Bateria baixa (12%)</button>
+            <button type="button" id="carregar">Colocar para carregar</button>
+          </div>
+        </div>
+        <div class="grupo">
+          <div class="grupo-rot">Conexão e registro</div>
+          <div class="botoes">
+            <button type="button" id="sem-sinal" aria-pressed="false">Simular sem sinal</button>
+            <button type="button" id="esquecer" class="perigo">Esquecer registro</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="cartao log">
+        <div class="log-cab"><h2>Registro de eventos</h2><button type="button" id="limpar-log" class="mini">Limpar</button></div>
+        <ol id="log" class="log-lista"><li class="vazio">Nada ainda. Os eventos do aparelho aparecem aqui.</li></ol>
+      </div>
+    </aside>
+  </div>
+</main>
+</body>
+</html>
