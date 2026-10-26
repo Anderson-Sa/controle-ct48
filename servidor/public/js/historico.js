@@ -60,7 +60,7 @@ function diaRotulo(t) {
   const dif = Math.round((zero(hoje) - zero(d)) / 86400000);
   if (dif === 0) return 'Hoje';
   if (dif === 1) return 'Ontem';
-  const s = d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' });
+  const s = d.toLocaleDateString(LOCALE, { weekday: 'long', day: '2-digit', month: '2-digit' });
   return s[0].toUpperCase() + s.slice(1);
 }
 

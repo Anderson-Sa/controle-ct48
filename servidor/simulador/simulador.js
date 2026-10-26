@@ -26,7 +26,7 @@ function log(tipo, texto) {
   lista.querySelector('.vazio')?.remove();
   const li = document.createElement('li');
   li.className = tipo;
-  li.innerHTML = `<time>${new Date().toLocaleTimeString('pt-BR')}</time><i></i><span>${esc(texto)}</span>`;
+  li.innerHTML = `<time>${new Date().toLocaleTimeString(LOCALE)}</time><i></i><span>${esc(texto)}</span>`;
   lista.prepend(li);
   while (lista.children.length > 80) lista.lastChild.remove();
 }
@@ -126,6 +126,7 @@ function render() {
   $('#ler2-texto').textContent = !token ? 'Registre o aparelho primeiro' : semSinal ? 'Sem sinal'
     : ui?.mode === 'scan' ? 'Lendo…' : estado?.liberado ? 'Ler QR de devolução' : 'Ler QR de liberação';
   renderEstado();
+  $('#giro').classList.toggle('lendo', ui?.mode === 'scan');
   $('#cap').innerHTML = estado ? `<b>${esc(estado.nome)}</b>${online ? '' : '<span>sem conexão</span>'}` : '';
   ajustarTela();
 }
@@ -278,6 +279,107 @@ document.addEventListener('keydown', e => {
   e.preventDefault();
   ler(null);
 });
+
+/* Aparelho em 3D: arrastar gira (com inércia), setas giram de 15°, duplo clique volta para a frente */
+const giro3d = (() => {
+  const palco = $('#palco'), giro = $('#giro'), sombra = $('#sombra');
+  const calmo = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const CAMADAS = 32;
+  let rx = -6, ry = -22, vx = 0, vy = 0, alvo = null, auto = false, quadro = 0;
+
+  // Corpo: fatias com o contorno da foto empilhadas em Z, assim a espessura tem o mesmo formato arredondado.
+  // As duas das pontas são a própria foto escurecida (mostram os botões laterais laranja).
+  const pilha = $('#camadas');
+  for (let i = 0; i < CAMADAS; i++) {
+    const ponta = i === 0 || i === CAMADAS - 1;
+    const fatia = document.createElement(ponta ? 'img' : 'div');
+    if (ponta) { fatia.src = '/img/ct48.png'; fatia.alt = ''; fatia.draggable = false; }
+    pilha.append(fatia);
+  }
+  function espessura() {
+    const esp = Math.round(giro.offsetWidth * 0.16);
+    giro.style.setProperty('--esp', esp + 'px');
+    [...pilha.children].forEach((fatia, i) => { fatia.style.transform = `translateZ(${(-esp / 2 + (esp * (i + .5)) / CAMADAS).toFixed(2)}px)`; });
+  }
+
+  const limitarX = v => Math.max(-60, Math.min(60, v));
+  function aplicar() {
+    giro.style.transform = `rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg)`;
+    // Sombra no chão: estreita quando o aparelho está de lado
+    sombra.style.setProperty('--sx', (0.32 + 0.68 * Math.abs(Math.cos(ry * Math.PI / 180))).toFixed(3));
+  }
+  function passo() {
+    quadro = 0;
+    if (alvo) {
+      rx += (alvo.rx - rx) * .14; ry += (alvo.ry - ry) * .14;
+      if (Math.abs(alvo.rx - rx) < .05 && Math.abs(alvo.ry - ry) < .05) { rx = alvo.rx; ry = alvo.ry; alvo = null; }
+    } else if (auto) {
+      ry += .45;
+    } else if (Math.abs(vx) > .02 || Math.abs(vy) > .02) {
+      ry += vy; rx = limitarX(rx + vx); vx *= .93; vy *= .93;
+    } else return aplicar();
+    aplicar();
+    animar();
+  }
+  const animar = () => { if (!quadro) quadro = requestAnimationFrame(passo); };
+
+  function ligarAuto(sim) {
+    auto = sim && !calmo;
+    $('#v-auto').setAttribute('aria-pressed', String(auto));
+    if (auto) { alvo = null; animar(); }
+  }
+  // Vai para um ângulo pelo caminho mais curto
+  function irPara(x, y) {
+    ligarAuto(false); vx = vy = 0;
+    const destino = ry + ((((y - ry) % 360) + 540) % 360 - 180);
+    if (calmo) { rx = x; ry = destino; aplicar(); return; }
+    alvo = { rx: x, ry: destino }; animar();
+  }
+
+  // Arrastar (não começa em botões nem nos campos da tela de registro)
+  let arrasto = null;
+  palco.addEventListener('pointerdown', e => {
+    if (e.button !== 0 || e.target.closest('button, input, a, label, form')) return;
+    arrasto = { x: e.clientX, y: e.clientY, t: performance.now() };
+    alvo = null; vx = vy = 0; ligarAuto(false);
+    palco.setPointerCapture(e.pointerId);
+    palco.classList.add('arrastando');
+  });
+  palco.addEventListener('pointermove', e => {
+    if (!arrasto) return;
+    const dx = e.clientX - arrasto.x, dy = e.clientY - arrasto.y, agora = performance.now();
+    const dt = Math.max(8, agora - arrasto.t);
+    ry += dx * .5; rx = limitarX(rx - dy * .4);
+    vy = (dx * .5) / dt * 16; vx = (-dy * .4) / dt * 16;
+    arrasto = { x: e.clientX, y: e.clientY, t: agora };
+    aplicar();
+  });
+  const soltar = () => {
+    if (!arrasto) return;
+    if (performance.now() - arrasto.t > 80 || calmo) vx = vy = 0;   // parou antes de soltar: sem inércia
+    arrasto = null; palco.classList.remove('arrastando'); animar();
+  };
+  palco.addEventListener('pointerup', soltar);
+  palco.addEventListener('pointercancel', soltar);
+  palco.addEventListener('dblclick', e => { if (!e.target.closest('button, input, form')) irPara(0, 0); });
+  palco.addEventListener('keydown', e => {
+    const d = { ArrowLeft: [0, -15], ArrowRight: [0, 15], ArrowUp: [10, 0], ArrowDown: [-10, 0] }[e.key];
+    if (!d) return;
+    e.preventDefault(); ligarAuto(false); vx = vy = 0;
+    alvo = { rx: limitarX((alvo?.rx ?? rx) + d[0]), ry: (alvo?.ry ?? ry) + d[1] };
+    if (calmo) { rx = alvo.rx; ry = alvo.ry; alvo = null; aplicar(); } else animar();
+  });
+
+  $('#v-frente').addEventListener('click', () => irPara(0, 0));
+  $('#v-lado').addEventListener('click', () => irPara(-8, -72));
+  $('#v-verso').addEventListener('click', () => irPara(-6, 180));
+  $('#v-auto').addEventListener('click', () => ligarAuto(!auto));
+
+  window.addEventListener('resize', espessura);
+  $('.ct48-img').addEventListener('load', espessura);
+  espessura(); aplicar();
+  return { irPara };
+})();
 
 render();
 consultar().then(enviarBateria);

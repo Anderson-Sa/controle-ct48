@@ -51,7 +51,7 @@ async function carregarDetalhe(chave, silencioso) {
     ${p.turnoRh && !p.turno ? `<p class="pd-aviso">O turno "${esc(p.turnoRh)}" não está nas Configurações. Os alertas de não devolvido usam o tempo máximo de uso.</p>` : ''}
     <div class="pd-numeros">
       <div><b>${p.usos}</b><span>vezes que pegou aparelho</span></div>
-      <div><b>${p.primeiroUso ? new Date(p.primeiroUso).toLocaleDateString('pt-BR') : '—'}</b><span>primeiro uso</span></div>
+      <div><b>${p.primeiroUso ? new Date(p.primeiroUso).toLocaleDateString(LOCALE) : '—'}</b><span>primeiro uso</span></div>
       <div class="${p.atrasos ? 'tem-atraso' : ''}"><b>${p.atrasos}</b><span>devoluções atrasadas em 90 dias${p.atrasos ? ` (em média ${dur(p.atrasoMedioMin * 60000)})` : ''}</span></div>
       <div><b>${p.usos90 ? Math.round((1 - p.atrasos / p.usos90) * 100) + '%' : '—'}</b><span>devolvidas no prazo (90 dias)</span></div>
     </div>

@@ -3,7 +3,7 @@
 const rel = { dias: 7, dados: null, carregadoEm: 0 };
 
 const horasFmt = h => h >= 10 ? `${Math.round(h)} h` : h >= 1 ? `${h.toFixed(1).replace('.', ',')} h` : `${Math.round(h * 60)} min`;
-const numFmt = n => n.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+const numFmt = n => n.toLocaleString(LOCALE, { maximumFractionDigits: 1 });
 const DIA_SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
 
 async function carregarRelatorio(forcar) {
@@ -75,8 +75,8 @@ function renderRelatorio() {
   const r = rel.dados, k = r.kpis;
   const ini = new Date(r.ini), fim = new Date(r.fim);
   $('#rel-periodo').textContent = r.dias === 1
-    ? `Hoje, ${ini.toLocaleDateString('pt-BR')}, até ${hora(r.fim)}`
-    : `De ${ini.toLocaleDateString('pt-BR')} a ${fim.toLocaleDateString('pt-BR')} (${r.dias} dias), até ${hora(r.fim)}`;
+    ? `Hoje, ${ini.toLocaleDateString(LOCALE)}, até ${hora(r.fim)}`
+    : `De ${ini.toLocaleDateString(LOCALE)} a ${fim.toLocaleDateString(LOCALE)} (${r.dias} dias), até ${hora(r.fim)}`;
 
   const tile = (num, rot, extra = '', cls = '') => `<div class="stat ${cls}"><span class="stat-num">${num}</span><span class="stat-rot">${rot}</span>${extra ? `<span class="stat-extra">${extra}</span>` : ''}</div>`;
   const alertas = k.saidasArea + k.qrFalsos;
@@ -84,7 +84,7 @@ function renderRelatorio() {
     tile(k.entregas, 'Entregas'),
     tile(horasFmt(k.horasUso), 'Horas de uso somadas'),
     tile(k.mediaUsoMin != null ? dur(k.mediaUsoMin * 60000) : '–', 'Uso médio por entrega'),
-    tile(k.pico.qtd, 'Pico ao mesmo tempo', k.pico.t ? `${new Date(k.pico.t).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} às ${hora(k.pico.t)}` : ''),
+    tile(k.pico.qtd, 'Pico ao mesmo tempo', k.pico.t ? `${new Date(k.pico.t).toLocaleDateString(LOCALE, { day: '2-digit', month: '2-digit' })} às ${hora(k.pico.t)}` : ''),
     tile(k.devolucoesQrPct != null ? k.devolucoesQrPct + '%' : '–', 'Devoluções por QR'),
     tile(k.atrasos, 'Devoluções atrasadas', `${k.atrasosPct}% das entregas`, k.atrasos ? 'warn' : ''),
     tile(alertas, 'Alertas', `${k.saidasArea} saída${k.saidasArea === 1 ? '' : 's'} da área · ${k.qrFalsos} QR falso${k.qrFalsos === 1 ? '' : 's'}`, alertas ? 'bad' : '')
@@ -97,15 +97,15 @@ function renderRelatorio() {
       const dt = new Date(d.dia + 'T12:00:00');
       return {
         valor: d.horas,
-        rotulo: r.dias > 14 ? `${dt.getDate()}/${dt.getMonth() + 1}` : `${DIA_SEMANA[dt.getDay()]} ${dt.getDate()}`,
-        rotuloLongo: dt.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' }),
+        rotulo: r.dias > 14 ? `${dt.getDate()}/${dt.getMonth() + 1}` : `${t(DIA_SEMANA[dt.getDay()])} ${dt.getDate()}`,
+        rotuloLongo: dt.toLocaleDateString(LOCALE, { weekday: 'long', day: '2-digit', month: '2-digit' }),
         d
       };
     }), { formato: horasFmt, rotuloDica: i => `${horasFmt(i.valor)} de uso · ${i.d.entregas} entrega${i.d.entregas === 1 ? '' : 's'} · pico de ${i.d.pico}` });
   }
 
   graficoBarras($('#rel-hora'), r.porHora.map(h => ({
-    valor: h.media, rotulo: `${h.hora}h`, rotuloLongo: `${String(h.hora).padStart(2, '0')}:00 às ${String(h.hora).padStart(2, '0')}:59`
+    valor: h.media, rotulo: IDIOMA === 'zh' ? `${h.hora}时` : `${h.hora}h`, rotuloLongo: `${String(h.hora).padStart(2, '0')}:00 às ${String(h.hora).padStart(2, '0')}:59`
   })), { formato: v => numFmt(v), rotuloDica: i => `${numFmt(i.valor)} aparelho${i.valor === 1 ? '' : 's'} em uso, em média` });
 
   const pgAp = paginar(r.porAparelho, 'rel-aparelhos', 10);
@@ -174,10 +174,10 @@ function renderMapaCalor(mapa) {
   if (!valores.length) { el.innerHTML = '<p class="muted h-vazio">Período curto demais para o mapa.</p>'; return; }
   const max = Math.max(...valores, 1);
   el.innerHTML = `<div class="mapa-calor">
-    <span></span>${Array.from({ length: 24 }, (_, h) => `<span class="mc-hora">${h % 3 === 0 ? h + 'h' : ''}</span>`).join('')}
+    <span></span>${Array.from({ length: 24 }, (_, h) => `<span class="mc-hora" translate="no">${h % 3 === 0 ? h + 'h' : ''}</span>`).join('')}
     ${ordem.map(d => `<span class="mc-dia">${NOMES_DIA[d]}</span>${mapa[d].map((v, h) => v == null
       ? `<span class="mc-cel vazia" title="${NOMES_DIA[d]} ${h}h: sem dados no período"></span>`
-      : `<span class="mc-cel" data-int="${v / max}" title="${NOMES_DIA[d]}, ${String(h).padStart(2, '0')}h: ${numFmt(v)} aparelhos em uso em média"></span>`).join('')}`).join('')}
+      : `<span class="mc-cel" data-int="${v / max}" title="${t(NOMES_DIA[d])}, ${String(h).padStart(2, '0')}h: ${numFmt(v)} aparelhos em uso em média"></span>`).join('')}`).join('')}
   </div>
   <div class="mc-legenda"><span>0</span><span class="mc-escala"></span><span>${numFmt(max)} aparelhos</span></div>`;
   for (const c of el.querySelectorAll('.mc-cel[data-int]')) {

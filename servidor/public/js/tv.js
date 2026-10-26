@@ -54,7 +54,7 @@ function renderTv() {
       <div class="tv-turno-horas"><span>${hora(t.ini)}</span><span>${Math.round(feito * 100)}% do turno</span><span>${hora(t.fim)}</span></div>`;
     $('#tv-turno span[data-larg]').style.width = feito * 100 + '%';
   } else $('#tv-turno').innerHTML = '';
-  $('#tv-relogio').innerHTML = `<b>${hora(agora)}</b><span>${esc(((d) => d[0].toUpperCase() + d.slice(1))(new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })))}</span>`;
+  $('#tv-relogio').innerHTML = `<b>${hora(agora)}</b><span>${esc(((d) => d[0].toUpperCase() + d.slice(1))(new Date().toLocaleDateString(LOCALE, { weekday: 'long', day: '2-digit', month: 'long' })))}</span>`;
 
   // Indicadores
   const reg = aparelhos.filter(a => a.registrado);

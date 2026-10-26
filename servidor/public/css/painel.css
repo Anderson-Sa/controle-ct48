@@ -1,18 +1,27 @@
 :root {
-  --bg: #F1F4F6; --surface: #FFFFFF; --ink: #15212B; --muted: #5A6A77; --line: #D3DAE0;
-  --accent: #0D6A85; --accent-ink: #FFFFFF;
+  /* Cores da Torre de Controle: vermelho J&T e cinzas neutros (fundo levemente cinza, como o JMS) */
+  --bg: oklch(0.975 0.002 286); --surface: oklch(1 0 0); --ink: oklch(0.145 0 0); --muted: oklch(0.52 0.01 286); --line: oklch(0.92 0.004 286);
+  --accent: oklch(0.58 0.235 28); --accent-ink: oklch(0.985 0 0);
+  --livre: #2A78D6;   /* azul da Torre (série "confirmado"): aparelho livre, para não confundir com o vermelho */
   --ok: #1D7F47; --ok-bg: #E2F3E8; --bad: #B23A2E; --bad-bg: #FBE6E3; --warn: #8C5B00; --warn-bg: #FFF2D3;
   --f-body: "Segoe UI", system-ui, -apple-system, sans-serif;
   --f-mono: Consolas, ui-monospace, monospace;
   color-scheme: light;
 }
+/* Modo noite: segue o sistema, a menos que o botão de tema tenha fixado um (js/tema.js) */
 @media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0E151B; --surface: #172129; --ink: #E5ECF1; --muted: #93A3AF; --line: #293842;
-    --accent: #52B4D2; --accent-ink: #05212B;
+  :root:not([data-tema="claro"]) {
+    --bg: oklch(0.145 0 0); --surface: oklch(0.205 0 0); --ink: oklch(0.985 0 0); --muted: oklch(0.708 0 0); --line: oklch(0.3 0 0);
+    --accent: oklch(0.64 0.23 27); --accent-ink: oklch(0.985 0 0); --livre: #3987E5;
     --ok: #62CC8E; --ok-bg: #143020; --bad: #F18B7F; --bad-bg: #3A1B18; --warn: #F0B84E; --warn-bg: #352912;
     color-scheme: dark;
   }
+}
+:root[data-tema="escuro"] {
+  --bg: oklch(0.145 0 0); --surface: oklch(0.205 0 0); --ink: oklch(0.985 0 0); --muted: oklch(0.708 0 0); --line: oklch(0.3 0 0);
+  --accent: oklch(0.64 0.23 27); --accent-ink: oklch(0.985 0 0); --livre: #3987E5;
+  --ok: #62CC8E; --ok-bg: #143020; --bad: #F18B7F; --bad-bg: #3A1B18; --warn: #F0B84E; --warn-bg: #352912;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -89,8 +98,14 @@ input { font: inherit; font-weight: 400; color: var(--ink); background: var(--bg
 
 /* Menu lateral */
 .marca { display: flex; align-items: center; gap: 12px; padding: 4px 6px 14px; border-bottom: 1px solid var(--line); }
-.marca-logo { display: grid; place-items: center; width: 42px; height: 42px; flex: none; border-radius: 11px; background: linear-gradient(150deg, color-mix(in srgb, var(--accent) 35%, var(--bg)), var(--bg)); border: 1px solid var(--line); overflow: hidden; }
-.marca-logo img { width: 17px; height: auto; transform: rotate(-8deg); filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .4)); }
+/* Marca: logo da J&T em cima, nome do sistema e unidade embaixo (como o topo da Torre) */
+.marca { flex-direction: column; align-items: flex-start; gap: 10px; }
+.marca-jt { display: block; height: 22px; width: auto; }
+.marca-txt b { display: block; font-size: 15px; line-height: 1.2; }
+.marca-txt span { display: block; font-size: 12px; color: var(--muted); }
+.login-jt { display: block; height: 20px; width: auto; margin-bottom: 14px; }
+.tv-jt { display: block; height: 26px; width: auto; }
+.tv-sep { width: 1px; height: 30px; background: var(--line); }
 .marca b { display: block; font-size: 16px; line-height: 1.2; }
 .menu { display: grid; gap: 2px; }
 .menu-grupo { padding: 12px 12px 6px; font: 600 10.5px/1 var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); opacity: .8; }
@@ -117,7 +132,7 @@ input { font: inherit; font-weight: 400; color: var(--ink); background: var(--bg
 .frota-barra span { height: 100%; width: 0; transition: width .4s ease; }
 .frota-barra span:empty { min-width: 0; }
 .f-uso { background: var(--ok); }
-.f-livre { background: var(--accent); }
+.f-livre { background: var(--livre); }
 .f-off { background: var(--muted); opacity: .5; }
 .frota-leg { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 13px; }
 .frota-leg li { display: flex; align-items: center; gap: 8px; }
@@ -130,7 +145,8 @@ input { font: inherit; font-weight: 400; color: var(--ink); background: var(--bg
   .app { grid-template-columns: minmax(0, 1fr); }
   .lateral { position: sticky; top: 0; z-index: 5; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 16px 0; border-right: 0; border-bottom: 1px solid var(--line); }
   .marca { padding: 0; }
-  .marca .eyebrow { display: none; }
+  .marca { flex-direction: row; align-items: center; }
+  .marca-txt span { display: none; }
   .lateral-pe { margin: 0 0 0 auto; display: flex; align-items: center; gap: 10px; }
   .status-vivo { padding: 0; background: none; }
   .status-vivo.err { background: none; }
@@ -145,7 +161,7 @@ input { font: inherit; font-weight: 400; color: var(--ink); background: var(--bg
   .menu button[aria-selected="true"] .mt b { color: var(--ink); }
   .menu button[aria-selected="true"]::before { display: none; }
   .marca { border: 0; padding: 0; }
-  .marca-logo { width: 34px; height: 34px; }
+  .marca-jt { height: 18px; }
   .badge { margin-left: 0; }
   .cab-pagina { padding: 18px 16px 12px; }
   .relogio { display: none; }
@@ -272,7 +288,7 @@ select { font: inherit; color: var(--ink); background: var(--bg); border: 1px so
 .grade-aparelhos { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
 .ap-card { display: flex; flex-direction: column; gap: 14px; background: var(--surface); border: 1px solid var(--line); border-top: 4px solid var(--line); border-radius: 10px; padding: 16px; }
 .ap-card.uso { border-top-color: var(--ok); }
-.ap-card.livre { border-top-color: var(--accent); }
+.ap-card.livre { border-top-color: var(--livre); }
 .ap-card.pendente { border-top-color: var(--warn); }
 .ap-card.fora { border-color: var(--bad); border-top-color: var(--bad); }
 .ap-card header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
@@ -496,7 +512,7 @@ select { font: inherit; color: var(--ink); background: var(--bg); border: 1px so
 
 /* Impressão do relatório */
 @media print {
-  :root { --bg: #FFFFFF; --surface: #FFFFFF; --ink: #000000; --muted: #444444; --line: #CCCCCC; --accent: #0D6A85; color-scheme: light; }
+  :root { --bg: #FFFFFF; --surface: #FFFFFF; --ink: #000000; --muted: #444444; --line: #CCCCCC; --accent: #E30613; color-scheme: light; }
   .lateral, .nao-imprimir, .relogio, #card-em-uso { display: none !important; }
   .app { display: block; }
   .card, .stat { break-inside: avoid; box-shadow: none; }
@@ -588,7 +604,7 @@ select { font: inherit; color: var(--ink); background: var(--bg); border: 1px so
 .bat-mini i { display: block; height: 100%; border-radius: 1px; background: var(--ok); }
 .bat-mini.baixa { border-color: var(--bad); }
 .bat-mini.baixa i { background: var(--bad); }
-.bat-mini.carregando i { background: var(--accent); }
+.bat-mini.carregando i { background: var(--ok); }
 
 /* ===== Pessoas: atrasos ===== */
 .pd-numeros .tem-atraso b { color: var(--warn); }
@@ -625,8 +641,6 @@ select { font: inherit; color: var(--ink); background: var(--bg); border: 1px so
 body.com-tv { overflow: hidden; }
 .tv-cab { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 28px; align-items: center; }
 .tv-marca { display: flex; align-items: center; gap: 14px; }
-.tv-logo { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(150deg, color-mix(in srgb, var(--accent) 40%, var(--surface)), var(--surface)); border: 1px solid var(--line); }
-.tv-logo img { width: 20px; transform: rotate(-8deg); filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .4)); }
 .tv-marca b { display: block; font-size: 24px; line-height: 1.1; }
 .tv-vivo { display: inline-flex; align-items: center; gap: 7px; margin-top: 4px; font: 700 12px/1 var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--ok); }
 .tv-vivo i { width: 9px; height: 9px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 0 color-mix(in srgb, var(--ok) 60%, transparent); animation: tv-pulso 2s infinite; }
@@ -638,7 +652,7 @@ body.com-tv { overflow: hidden; }
 .tv-turno-topo b { font-size: 19px; }
 .tv-turno-topo span { font-size: 15px; color: var(--muted); }
 .tv-turno-barra { position: relative; height: 10px; border-radius: 999px; background: var(--line); overflow: hidden; }
-.tv-turno-barra span { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--ok)); }
+.tv-turno-barra span { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--accent); }
 .tv-turno-barra.acabando span { background: linear-gradient(90deg, var(--warn), var(--bad)); }
 .tv-turno-horas { display: flex; justify-content: space-between; font: 600 12px var(--f-mono); color: var(--muted); }
 
@@ -658,7 +672,7 @@ body.com-tv { overflow: hidden; }
 .tv-kpi .tv-kpi-rot { grid-column: 1 / -1; font-size: 17px; font-weight: 600; color: var(--ink); }
 .tv-kpi .tv-kpi-sub { grid-column: 1 / -1; font-size: 13px; color: var(--muted); margin-top: -4px; }
 .tv-kpi.c-ok { --cor: var(--ok); }
-.tv-kpi.c-azul { --cor: var(--accent); }
+.tv-kpi.c-azul { --cor: var(--livre); }
 .tv-kpi.c-warn { --cor: var(--warn); }
 .tv-kpi.c-bad { --cor: var(--bad); }
 .tv-kpi.zero { --cor: var(--muted); opacity: .55; }
@@ -672,7 +686,7 @@ body.com-tv { overflow: hidden; }
 .tv-frota-leg i, .tv-leg i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: 0; }
 .f-alerta, .d-alerta { background: var(--bad); }
 .d-uso { background: var(--ok); }
-.d-livre { background: var(--accent); }
+.d-livre { background: var(--livre); }
 
 .tv-corpo { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, .8fr); gap: 18px; flex: 1; min-height: 0; }
 .tv-painel { display: flex; flex-direction: column; min-height: 0; padding: 18px; border-radius: 18px; background: color-mix(in srgb, var(--surface) 75%, transparent); border: 1px solid var(--line); }
@@ -685,7 +699,7 @@ body.com-tv { overflow: hidden; }
 .tv-area-topo span { font-size: 15px; font-weight: 600; color: var(--muted); }
 .tv-area-topo b { font-size: 34px; line-height: 1; font-variant-numeric: tabular-nums; }
 .tv-pontos { display: flex; flex-wrap: wrap; gap: 5px; }
-.tv-pontos i { width: 13px; height: 13px; border-radius: 4px; background: var(--accent); }
+.tv-pontos i { width: 13px; height: 13px; border-radius: 4px; background: var(--livre); }
 .tv-pontos i.uso { background: var(--ok); }
 .tv-pontos i.prob { background: var(--bad); box-shadow: 0 0 0 2px color-mix(in srgb, var(--bad) 35%, transparent); }
 .tv-area small { font-size: 13px; color: var(--muted); }
@@ -723,3 +737,24 @@ body.com-tv { overflow: hidden; }
 
 @media (max-width: 1500px) { .tv-corpo { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); } .tv-corpo > :last-child { display: none; } }
 @media (max-width: 1100px) { .tv-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } .tv-cab { grid-template-columns: auto minmax(0, 1fr) auto; } .tv-turno { display: none; } .tv-corpo { grid-template-columns: minmax(0, 1fr); } }
+
+/* Botão de modo claro / noite: mostra a lua no claro e o sol no escuro */
+.tema-botao { display: inline-flex; align-items: center; gap: 6px; }
+.tema-botao svg { width: 15px; height: 15px; flex: none; }
+.tema-botao .i-sol, .tema-botao[aria-pressed="true"] .i-lua { display: none; }
+.tema-botao[aria-pressed="true"] .i-sol { display: block; }
+.login-topo { position: fixed; top: 16px; right: 16px; z-index: 1; display: flex; align-items: center; gap: 8px; }
+.login-topo .tema-botao { background: var(--surface); }
+
+/* Seletor de idioma (bandeiras), igual ao da Torre de Controle: js/i18n.js */
+.idioma { display: inline-flex; align-items: center; gap: 2px; padding: 3px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); }
+.idioma button { display: inline-flex; align-items: center; gap: 6px; font: 600 12px/1 var(--f-body); color: var(--muted); cursor: pointer; padding: 3px 10px 3px 3px; border: 1px solid transparent; border-radius: 999px; background: transparent; }
+.idioma button:hover { color: var(--ink); }
+.idioma button[aria-pressed="true"] { color: var(--ink); background: var(--surface); border-color: var(--line); box-shadow: 0 1px 2px rgba(0, 0, 0, .08); }
+.idioma .bandeira { display: block; width: 20px; height: 20px; border-radius: 50%; overflow: hidden; box-shadow: 0 0 0 1px rgba(0, 0, 0, .1); }
+.idioma .bandeira svg { display: block; width: 100%; height: 100%; }
+.idioma button[aria-pressed="false"] .bandeira { opacity: .6; filter: grayscale(.3); }
+@media (max-width: 600px) { .idioma .sigla { display: none; } .idioma button { padding-right: 3px; } }
+/* Chinês: fonte com os ideogramas e sem caixa-alta espaçada nos rótulos */
+:root:lang(zh-CN) { --f-body: "Segoe UI", "Microsoft YaHei", "PingFang SC", system-ui, sans-serif; }
+:lang(zh-CN) .eyebrow { letter-spacing: .04em; }

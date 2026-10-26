@@ -72,7 +72,7 @@ async function atualizar() {
     if (aba === 'historico') carregarHistorico();
     if (aba === 'areas') renderAreas(await api('GET', '/api/areas-wifi'));
     $('#status-vivo').className = 'status-vivo ok';
-    $('#conexao').textContent = 'Ao vivo · ' + new Date().toLocaleTimeString('pt-BR');
+    $('#conexao').textContent = 'Ao vivo · ' + new Date().toLocaleTimeString(LOCALE);
   } catch (err) {
     if (err.status !== 401) { $('#status-vivo').className = 'status-vivo err'; $('#conexao').textContent = err.message; }
   }
@@ -112,7 +112,7 @@ document.addEventListener('keydown', e => {
 /* ---------- Relógio do cabeçalho ---------- */
 function relogio() {
   const d = new Date();
-  const dia = d.toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' });
+  const dia = d.toLocaleDateString(LOCALE, { weekday: 'long', day: '2-digit', month: 'long' });
   $('#relogio').innerHTML = `<b>${hora(d)}</b>${esc(dia)}`;
 }
 relogio();
